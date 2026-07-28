@@ -17,13 +17,13 @@
 5. **Done — The solution builds with 78 warnings.**
    The main issues are nullable-contract warnings throughout `PhotinoEx.Blazor` and a `WindowsBase` 4.0/5.0 conflict caused by WebView2's WPF assembly entering the cross-platform `net10.0` project.
 
-6. **Low — Linux feature exceptions are misleading.**
+6. **Done — Linux feature exceptions are misleading.**
    `PhotinoEx.Core/Platform/Linux/LinPhotinoEx.cs:505,512,604,745` says Linux is unsupported when only window positioning or topmost behavior is unsupported. These should be `PlatformNotSupportedException` messages describing the feature limitation.
 
 7. **Done — A production exception is unprofessional and loses exception structure.**
    `PhotinoEx.Core/Platform/Linux/LinPhotinoEx.cs:373` should let the original exception propagate or wrap it with a useful message and the original exception as its inner exception.
 
-8. **Low — Windows dialog methods are falsely asynchronous.**
+8. **Done — Windows dialog methods are falsely asynchronous.**
    Methods beginning at `PhotinoEx.Core/Platform/Windows/Dialog/WinPhotinoExDialog.cs:16` execute synchronously and contain no `await`, despite their `Async` names.
 
 ## Unsupported platform attributes
@@ -34,16 +34,16 @@ No existing unsupported attribute can currently be removed:
 - Linux topmost remains unsupported and throws at `PhotinoEx.Core/Platform/Linux/LinPhotinoEx.cs:601,742`.
 - Centering is Windows-only and directly casts to `WinPhotinoEx` at `PhotinoEx.Core/PhotinoExWindow.cs:223-243`.
 
-The comment claiming topmost is tested on Linux at `PhotinoEx.Core/Platform/PhotinoEx.cs:178` is stale and should be removed.
+The stale comment claiming topmost is tested on Linux has been removed.
 
-Missing platform attributes:
+Platform attributes added:
 
-- `WindowHandle` is Windows-only but lacks `[SupportedOSPlatform("windows")]` at `PhotinoEx.Core/PhotinoExWindow.cs:109`.
-- `ClearBrowserAutoFill` is unimplemented on Linux at `PhotinoEx.Core/Platform/Linux/LinPhotinoEx.cs:418`.
-- Outbound file dragging is unimplemented on macOS at `PhotinoEx.Core/Platform/Mac/MacPhotinoEx.cs:71`.
+- `WindowHandle` is marked `[SupportedOSPlatform("windows")]`.
+- `ClearBrowserAutoFill` is marked unsupported on Linux.
+- Outbound file dragging is marked unsupported on macOS across Core and Blazor APIs.
 
 ## Validation
 
-- Solution build: succeeded with 78 warnings and no errors.
-- Unit tests: all 61 passed.
+- Solution build: succeeded with no warnings or errors.
+- Unit tests: all 66 passed.
 - GUI integration tests: not run; they require `PHOTINOEX_RUN_GUI_TESTS=1` and a suitable desktop session.

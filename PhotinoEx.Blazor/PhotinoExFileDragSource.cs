@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -7,6 +8,7 @@ using PhotinoEx.Core.Models;
 
 namespace PhotinoEx.Blazor;
 
+[UnsupportedOSPlatform("macos")]
 public sealed class PhotinoExFileDragSource : ComponentBase
 {
     [Inject]

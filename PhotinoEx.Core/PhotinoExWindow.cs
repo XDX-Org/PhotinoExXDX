@@ -106,6 +106,7 @@ public class PhotinoExWindow
     /// </value>
     /// <exception cref="System.ApplicationException">Thrown when the window is not initialized yet.</exception>
     /// <exception cref="System.PlatformNotSupportedException">Thrown when accessed from a non-Windows platform.</exception>
+    [SupportedOSPlatform("windows")]
     public IntPtr WindowHandle
     {
         get
@@ -1666,6 +1667,7 @@ public class PhotinoExWindow
 
     /// <summary>Starts a native file drag operation.</summary>
     /// <remarks>The operation must be called from a valid native pointer gesture.</remarks>
+    [UnsupportedOSPlatform("macos")]
     public async Task<FileDragDropEffects> BeginFileDragAsync(
         IEnumerable<string> paths,
         FileDragDropEffects allowedEffects = FileDragDropEffects.Copy,
@@ -2586,6 +2588,7 @@ public class PhotinoExWindow
     /// <returns>
     /// Returns the current <see cref="PhotinoExWindow"/> instance.
     /// </returns>
+    [UnsupportedOSPlatform("linux")]
     public PhotinoExWindow ClearBrowserAutoFill()
     {
         if (IsWindowsPlatform)

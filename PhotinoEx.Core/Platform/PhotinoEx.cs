@@ -56,12 +56,14 @@ public abstract class PhotinoEx
     public int MaxWidth { get; set; }
     public int MaxHeight { get; set; }
 
+    [UnsupportedOSPlatform("linux")]
     public abstract void ClearBrowserAutoFill();
 
     public abstract void SetClipboardText(string text);
 
     public abstract void SetClipboardFiles(IReadOnlyList<string> paths);
 
+    [UnsupportedOSPlatform("macos")]
     public abstract Task<FileDragDropEffects> BeginFileDragAsync(
         IReadOnlyList<string> paths,
         FileDragDropEffects allowedEffects,
@@ -176,8 +178,6 @@ public abstract class PhotinoEx
     // untested -  apple
     public abstract void SetTitle(string title);
 
-    // Tested - linux
-    // untested -  apple / windows
     [UnsupportedOSPlatform("Linux")]
     public abstract void SetTopmost(bool topmost);
 

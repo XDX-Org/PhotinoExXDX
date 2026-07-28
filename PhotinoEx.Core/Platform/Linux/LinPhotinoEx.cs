@@ -420,6 +420,7 @@ public class LinPhotinoEx : PhotinoEx
         }
     }
 
+    [UnsupportedOSPlatform("linux")]
     public override void ClearBrowserAutoFill()
     {
         // TODO: from Photino
@@ -508,15 +509,13 @@ public class LinPhotinoEx : PhotinoEx
     [UnsupportedOSPlatform("Linux")]
     public override Point GetPosition()
     {
-        throw new NotSupportedException("Linux is not a supported OS");
-        // Wayland does not support setting TopMost
+        throw new PlatformNotSupportedException("Window positioning is not supported on Linux.");
     }
 
     [UnsupportedOSPlatform("Linux")]
     public override void SetPosition(Point newLocation)
     {
-        throw new NotSupportedException("Linux is not a supported OS");
-        // Wayland does not support setting TopMost
+        throw new PlatformNotSupportedException("Window positioning is not supported on Linux.");
     }
 
     public override bool GetJavascriptClipboardAccessEnabled()
@@ -608,8 +607,7 @@ public class LinPhotinoEx : PhotinoEx
     [UnsupportedOSPlatform("Linux")]
     public override bool GetTopmost()
     {
-        throw new NotSupportedException("Linux is not a supported OS");
-        // Wayland does not support setting TopMost
+        throw new PlatformNotSupportedException("Topmost windows are not supported on Linux.");
     }
 
     public override int GetZoom()
@@ -751,8 +749,7 @@ public class LinPhotinoEx : PhotinoEx
     [UnsupportedOSPlatform("Linux")]
     public override void SetTopmost(bool topmost)
     {
-        throw new NotSupportedException("Linux is not a supported OS");
-        // Wayland does not support setting TopMost
+        throw new PlatformNotSupportedException("Topmost windows are not supported on Linux.");
     }
 
     public override void SetZoom(int zoom)

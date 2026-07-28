@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using PhotinoEx.Core;
@@ -19,6 +20,7 @@ public sealed class PhotinoExFileDragDrop : IPhotinoExFileDragDrop, IDisposable
 
     public event EventHandler<FilesDroppedEventArgs>? FilesDropped;
 
+    [UnsupportedOSPlatform("macos")]
     public Task<FileDragDropEffects> BeginDragAsync(
         IReadOnlyList<string> paths,
         FileDragDropEffects allowedEffects = FileDragDropEffects.Copy,

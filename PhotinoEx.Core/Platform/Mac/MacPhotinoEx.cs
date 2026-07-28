@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using PhotinoEx.Core.Models;
 using Point = System.Drawing.Point;
 using Monitor = PhotinoEx.Core.Models.Monitor;
@@ -64,6 +65,7 @@ public class MacPhotinoEx : PhotinoEx
         }
     }
 
+    [UnsupportedOSPlatform("macos")]
     public override Task<FileDragDropEffects> BeginFileDragAsync(
         IReadOnlyList<string> paths,
         FileDragDropEffects allowedEffects,

@@ -3,6 +3,7 @@ using PhotinoEx.Core.Models;
 using PhotinoEx.Core.Platform.Linux;
 using PhotinoEx.Blazor;
 using Gdk;
+using System.Runtime.Versioning;
 using Xunit;
 
 namespace PhotinoEx.Core.Tests;
@@ -123,6 +124,7 @@ public sealed class FileDragDropTests
     [Theory]
     [InlineData(FileDragDropEffects.None)]
     [InlineData((FileDragDropEffects) 8)]
+    [UnsupportedOSPlatform("macos")]
     public async Task BeginFileDragRejectsInvalidEffects(FileDragDropEffects effects)
     {
         var window = new PhotinoExWindow();
@@ -137,6 +139,7 @@ public sealed class FileDragDropTests
     }
 
     [Fact]
+    [UnsupportedOSPlatform("macos")]
     public async Task BeginFileDragRequiresAnInitializedWindow()
     {
         var window = new PhotinoExWindow();
@@ -150,6 +153,7 @@ public sealed class FileDragDropTests
     }
 
     [Fact]
+    [UnsupportedOSPlatform("macos")]
     public async Task BeginFileDragHonorsPreCancelledToken()
     {
         var window = new PhotinoExWindow();

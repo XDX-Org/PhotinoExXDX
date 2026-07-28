@@ -15,7 +15,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         _hwnd = hwnd;
     }
 
-    public async Task<List<string>> ShowOpenFileAsync(string title, string? path, bool multiSelect, List<FileFilter>? filterPatterns)
+    public Task<List<string>> ShowOpenFileAsync(string title, string? path, bool multiSelect, List<FileFilter>? filterPatterns)
     {
         var dialog = CreateDialog<IFileOpenDialog>(WinConstants.CLSID_FileOpenDialog);
         var result = new List<string>();
@@ -55,7 +55,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (hr == WinConstants.ERROR_CANCELLED)
             {
-                return result;
+                return Task.FromResult(result);
             }
 
             if (hr != WinConstants.S_OK)
@@ -63,7 +63,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
                 Marshal.ThrowExceptionForHR(hr);
             }
 
-            return GetResults(dialog, multiSelect);
+            return Task.FromResult(GetResults(dialog, multiSelect));
         }
         catch (Exception e)
         {
@@ -76,7 +76,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         }
     }
 
-    public async Task<List<string>> ShowOpenFolderAsync(string title, string? path, bool multiSelect)
+    public Task<List<string>> ShowOpenFolderAsync(string title, string? path, bool multiSelect)
     {
         var dialog = CreateDialog<IFileOpenDialog>(WinConstants.CLSID_FileOpenDialog);
         var result = new List<string>();
@@ -102,7 +102,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (hr == WinConstants.ERROR_CANCELLED)
             {
-                return result;
+                return Task.FromResult(result);
             }
 
             if (hr != WinConstants.S_OK)
@@ -110,7 +110,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
                 Marshal.ThrowExceptionForHR(hr);
             }
 
-            return GetResults(dialog, multiSelect);
+            return Task.FromResult(GetResults(dialog, multiSelect));
         }
         catch (Exception e)
         {
@@ -123,7 +123,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         }
     }
 
-    public async Task<string> ShowSaveFileAsync(string title, string? path, List<FileFilter>? filterPatterns, string defaultExtension = "txt",
+    public Task<string> ShowSaveFileAsync(string title, string? path, List<FileFilter>? filterPatterns, string defaultExtension = "txt",
         string defaultFileName = "PhotinoExFile")
     {
         var dialog = CreateDialog<IFileSaveDialog>(WinConstants.CLSID_FileSaveDialog);
@@ -171,7 +171,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (hr == WinConstants.ERROR_CANCELLED)
             {
-                return "";
+                return Task.FromResult(string.Empty);
             }
 
             if (hr != WinConstants.S_OK)
@@ -183,7 +183,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
             try
             {
                 item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
-                return pathToUse;
+                return Task.FromResult(pathToUse);
             }
             finally
             {
@@ -196,7 +196,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         }
     }
 
-    public async Task<DialogResult> ShowMessageAsync(string title, string text, DialogButtons buttons, DialogIcon icon)
+    public Task<DialogResult> ShowMessageAsync(string title, string text, DialogButtons buttons, DialogIcon icon)
     {
         uint flags = 0;
 
@@ -243,21 +243,21 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         switch (result)
         {
             case WinConstants.IDOK:
-                return DialogResult.Ok;
+                return Task.FromResult(DialogResult.Ok);
             case WinConstants.IDCANCEL:
-                return DialogResult.Cancel;
+                return Task.FromResult(DialogResult.Cancel);
             case WinConstants.IDYES:
-                return DialogResult.Yes;
+                return Task.FromResult(DialogResult.Yes);
             case WinConstants.IDNO:
-                return DialogResult.No;
+                return Task.FromResult(DialogResult.No);
             case WinConstants.IDABORT:
-                return DialogResult.Abort;
+                return Task.FromResult(DialogResult.Abort);
             case WinConstants.IDRETRY:
-                return DialogResult.Retry;
+                return Task.FromResult(DialogResult.Retry);
             case WinConstants.IDIGNORE:
-                return DialogResult.Ignore;
+                return Task.FromResult(DialogResult.Ignore);
             default:
-                return DialogResult.Cancel;
+                return Task.FromResult(DialogResult.Cancel);
         }
     }
 
