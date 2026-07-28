@@ -229,6 +229,22 @@ Use a per-icon asynchronous gate to serialize registration, updates, and disposa
 
 Event handlers may close windows, unregister the icon, or replace its menu. Backends must therefore resolve callback state before invoking user code and tolerate disposal during the callback.
 
+## Possible future: animated icons
+
+GIF files are not animated automatically by the native tray APIs. The current Windows backend accepts `.ico` files, while Linux uses a shell-resolved image path and is intended for static images such as PNG. Passing a GIF path is therefore not a portable animation mechanism.
+
+Animated tray icons could be added explicitly:
+
+1. Decode the source GIF into frames and retain each frame's delay.
+2. Schedule frame changes while the icon is visible.
+3. On Windows, convert each frame to an `HICON` and update it with `Shell_NotifyIcon`.
+4. On Linux, publish each frame as StatusNotifierItem pixmap data and emit the icon-change signal. Pixmaps avoid desktop-shell path caching.
+5. Pause animation when hidden and release all decoded frames and native handles during disposal.
+
+The API should describe this as animation rather than GIF support so it can also accept APNG, WebP, or an application-provided frame sequence later. Frame rate should be capped to avoid unnecessary CPU use and excessive shell updates.
+
+Taskbar or dock icons have the same basic limitation: assigning a GIF does not make the native application icon animate. PhotinoEx could update a window/taskbar icon frame by frame, but shells may cache or throttle changes and rapid updates may flicker. Platform-native attention mechanisms should be preferred where possible, such as Windows taskbar progress and overlay icons or the macOS dock badge. Any future taskbar animation API should be separate from tray animation because the native handles, lifecycle, and platform behavior differ.
+
 ## Suggested implementation order
 
 1. Add the shared options, event arguments, menu model, exception, and revised interfaces.
