@@ -46,11 +46,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (!string.IsNullOrEmpty(path))
             {
-                var iid = typeof(IShellItem).GUID;
-                if (WinApi.SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out IShellItem folder) == WinConstants.S_OK)
-                {
-                    dialog.SetFolder(folder);
-                }
+                SetInitialFolder(path, dialog.SetFolder);
             }
 
             var hr = dialog.Show(_hwnd);
@@ -97,11 +93,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (!string.IsNullOrEmpty(path))
             {
-                var iid = typeof(IShellItem).GUID;
-                if (WinApi.SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out IShellItem folder) == WinConstants.S_OK)
-                {
-                    dialog.SetFolder(folder);
-                }
+                SetInitialFolder(path, dialog.SetFolder);
             }
 
             var hr = dialog.Show(_hwnd);
@@ -170,11 +162,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (!string.IsNullOrEmpty(path))
             {
-                var iid = typeof(IShellItem).GUID;
-                if (WinApi.SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out IShellItem startFolder) == WinConstants.S_OK)
-                {
-                    dialog.SetFolder(startFolder);
-                }
+                SetInitialFolder(path, dialog.SetFolder);
             }
 
             int hr = dialog.Show(_hwnd);
@@ -190,8 +178,15 @@ public class WinPhotinoExDialog : IPhotinoExDialog
             }
 
             dialog.GetResult(out IShellItem item);
-            item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
-            return pathToUse;
+            try
+            {
+                item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
+                return pathToUse;
+            }
+            finally
+            {
+                Marshal.ReleaseComObject(item);
+            }
         }
         finally
         {
@@ -271,13 +266,27 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         if (multiSelect)
         {
             dialog.GetResults(out IShellItemArray results);
-            results.GetCount(out uint count);
-
-            for (uint i = 0; i < count; i++)
+            try
             {
-                results.GetItemAt(i, out IShellItem item);
-                item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
-                result.Add(pathToUse);
+                results.GetCount(out uint count);
+
+                for (uint i = 0; i < count; i++)
+                {
+                    results.GetItemAt(i, out IShellItem item);
+                    try
+                    {
+                        item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
+                        result.Add(pathToUse);
+                    }
+                    finally
+                    {
+                        Marshal.ReleaseComObject(item);
+                    }
+                }
+            }
+            finally
+            {
+                Marshal.ReleaseComObject(results);
             }
 
             return result;
@@ -285,9 +294,34 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         else
         {
             dialog.GetResult(out IShellItem item);
-            item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
-            result.Add(pathToUse);
+            try
+            {
+                item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
+                result.Add(pathToUse);
+            }
+            finally
+            {
+                Marshal.ReleaseComObject(item);
+            }
             return result;
+        }
+    }
+
+    private static void SetInitialFolder(string path, Action<IShellItem> setFolder)
+    {
+        var iid = typeof(IShellItem).GUID;
+        if (WinApi.SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out IShellItem folder) != WinConstants.S_OK)
+        {
+            return;
+        }
+
+        try
+        {
+            setFolder(folder);
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(folder);
         }
     }
 }
