@@ -1,6 +1,7 @@
 using PhotinoEx.Core;
 using PhotinoEx.Core.Models;
 using PhotinoEx.Core.Platform.Linux;
+using PhotinoEx.Blazor;
 using Gdk;
 using Xunit;
 
@@ -8,6 +9,26 @@ namespace PhotinoEx.Core.Tests;
 
 public sealed class FileDragDropTests
 {
+    [Fact]
+    public void BlazorServiceForwardsDropsAndUnsubscribesWhenDisposed()
+    {
+        var window = new PhotinoExWindow();
+        var service = new PhotinoExFileDragDrop(window);
+        var args = new FilesDroppedEventArgs(["/tmp/file.txt"], FileDragDropEffects.Copy, 1, 2);
+        var received = 0;
+        service.FilesDropped += (_, value) =>
+        {
+            Assert.Same(args, value);
+            received++;
+        };
+
+        window.OnFilesDropped(args);
+        service.Dispose();
+        window.OnFilesDropped(args);
+
+        Assert.Equal(1, received);
+    }
+
     [Theory]
     [InlineData(FileDragDropEffects.None, DragAction.None)]
     [InlineData(FileDragDropEffects.Copy, DragAction.Copy)]
@@ -50,6 +71,26 @@ public sealed class FileDragDropTests
             );
 
             Assert.Equal([Path.GetFullPath(file), Path.GetFullPath(directory.FullName)], paths);
+        }
+        finally
+        {
+            directory.Delete(true);
+        }
+    }
+
+    [Fact]
+    public void NormalizeFilePathsPreservesEmptyUnicodeAndSpecialCharacterFiles()
+    {
+        var directory = Directory.CreateTempSubdirectory("PhotinoEx ünicode # ");
+        var file = Path.Combine(directory.FullName, "empty file #.txt");
+        File.Create(file).Dispose();
+
+        try
+        {
+            Assert.Equal(
+                [Path.GetFullPath(file), Path.GetFullPath(directory.FullName)],
+                PhotinoExWindow.NormalizeFilePaths([file, directory.FullName], "paths")
+            );
         }
         finally
         {

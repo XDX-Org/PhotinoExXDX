@@ -78,6 +78,8 @@ Completion requires inbound and outbound file/folder dragging with Dolphin and N
 
 ## Phase 4: macOS backend
 
+Deferred. The existing platform methods remain explicit `PlatformNotSupportedException` stubs.
+
 - [ ] Register the window for file URL drag types.
 - [ ] Receive inbound `NSDraggingInfo` file URLs and coordinates.
 - [ ] Create outbound `NSDraggingItem` values backed by file URLs.
@@ -89,11 +91,11 @@ Completion requires Finder interoperability after the macOS window backend is op
 
 ## Phase 5: Blazor integration
 
-- [ ] Add an injectable `IPhotinoExFileDragDrop` service.
-- [ ] Route inbound drops to .NET without exposing browser filesystem objects.
-- [ ] Associate outbound drags with a specific rendered element and pointer gesture.
-- [ ] Provide a component/helper for draggable file rows.
-- [ ] Ensure event subscriptions are removed when components or windows are disposed.
+- [x] Add an injectable `IPhotinoExFileDragDrop` service.
+- [x] Route inbound drops to .NET without exposing browser filesystem objects.
+- [x] Associate outbound drags with a specific rendered element and pointer gesture.
+- [x] Provide a component/helper for draggable file rows.
+- [x] Ensure event subscriptions are removed when components or services are disposed.
 
 The bridge may use internal web messages to identify the source element and gesture, but paths and native drag data remain in .NET/native code.
 
@@ -101,16 +103,20 @@ Completion requires a Blazor page that receives desktop file drops and drags sel
 
 ## Phase 6: Sample and tests
 
-- [ ] Add inbound drop-zone and outbound draggable-file examples to the sample app.
-- [ ] Add contract tests for path validation, URI decoding, effects, and cancellation.
+- [x] Add inbound drop-zone and outbound draggable-file examples to the sample app.
+- [x] Add contract tests for path validation, URI conversion, effects, cancellation, and event lifetime.
 - [ ] Add Windows integration tests for `CF_HDROP` and effect negotiation.
-- [ ] Add Linux integration tests for offered formats and URI decoding.
+- [x] Add Linux tests for effect mapping; native format negotiation remains a desktop check.
 - [ ] Add user-gesture desktop checks for Wayland and macOS.
 - [ ] Test files, folders, mixed selections, empty files, Unicode, spaces, and special characters.
 - [ ] Test source-window closure and missing-file races during a drag.
-- [ ] Document which GUI checks cannot run in headless CI.
+- [x] Document which GUI checks cannot run in headless CI.
 
 Completion requires repeatable automated coverage plus documented manual checks for security-restricted desktop gestures.
+
+### Manual desktop checks
+
+Trusted drag gestures cannot be synthesized reliably in headless CI. Before release, run the sample against Explorer on Windows and Dolphin and Nautilus on both X11 and Wayland. Check files, folders, mixed selections, Unicode, spaces, special characters, cancellation, source-window closure, and files removed after selection. macOS checks remain deferred with Phase 4.
 
 ## Constraints
 

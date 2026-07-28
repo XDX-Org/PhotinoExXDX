@@ -3,11 +3,15 @@
 @using PhotinoEx.Core.Models
 @using PhotinoEx.Blazor
 @inject IPhotinoExClipboard Clipboard
+@inject IPhotinoExFileDragDrop FileDragDrop
+@implements IDisposable
 
 <h3>Home</h3>
 <button @onclick="OpenFile">OpenFile</button>
 <button @onclick="OpenFiles">OpenFiles</button>
 <button @onclick="SelectAndCopyFiles">Select and copy files</button>
+<button @onclick="SelectFilesToDrag">Select files to drag</button>
+<button @onclick="SelectFoldersToDrag">Select folders to drag</button>
 <button @onclick="OpenFolders">OpenFolders</button>
 <button @onclick="OpenFolder">OpenFolder</button>
 <button @onclick="SaveFile">SaveFile</button>
@@ -23,10 +27,43 @@
 {
     <p>@_clipboardStatus</p>
 }
+<section class="file-drop-zone">
+    <strong>Drop files or folders here</strong>
+    @if (_droppedPaths.Count > 0)
+    {
+        <ul>
+            @foreach (var path in _droppedPaths)
+            {
+                <li>@path</li>
+            }
+        </ul>
+    }
+</section>
+@if (_dragPaths.Count > 0)
+{
+    <p>Press and drag this selection into another application:</p>
+    <PhotinoExFileDragSource Paths="_dragPaths" Class="file-drag-source" DragCompleted="OnDragCompleted">
+        @foreach (var path in _dragPaths)
+        {
+            <div>@path</div>
+        }
+    </PhotinoExFileDragSource>
+}
+@if (_dragStatus is not null)
+{
+    <p>@_dragStatus</p>
+}
 
 @code {
     private bool _showBrowserMenuItem;
     private string? _clipboardStatus;
+    private string? _dragStatus;
+    private IReadOnlyList<string> _dragPaths = [];
+    private IReadOnlyList<string> _droppedPaths = [];
+
+    protected override void OnInitialized() => FileDragDrop.FilesDropped += OnFilesDropped;
+
+    public void Dispose() => FileDragDrop.FilesDropped -= OnFilesDropped;
 
 
     private async Task OpenFile()
@@ -55,6 +92,33 @@
         await Clipboard.CopyFilesAsync(files);
         _clipboardStatus = $"Copied {files.Count} file(s) to the clipboard.";
     }
+
+    private async Task SelectFilesToDrag()
+    {
+        _dragPaths = await Program.App!.MainWindow.ShowOpenFileDialogAsync(
+            title: "Choose files to drag",
+            multiSelect: true
+        ) ?? [];
+        _dragStatus = _dragPaths.Count == 0 ? "No files selected." : null;
+    }
+
+    private async Task SelectFoldersToDrag()
+    {
+        _dragPaths = await Program.App!.MainWindow.ShowOpenFolderDialogAsync(
+            title: "Choose folders to drag",
+            multiSelect: true
+        ) ?? [];
+        _dragStatus = _dragPaths.Count == 0 ? "No folders selected." : null;
+    }
+
+    private void OnFilesDropped(object? sender, FilesDroppedEventArgs args)
+    {
+        _droppedPaths = args.Paths;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnDragCompleted(FileDragDropEffects effect) =>
+        _dragStatus = effect == FileDragDropEffects.None ? "Drag cancelled." : $"Drag completed: {effect}.";
 
     private async Task OpenFolders()
     {
