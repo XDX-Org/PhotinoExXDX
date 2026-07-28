@@ -11,7 +11,7 @@
 3. **Done — Webview message-pump lifetime is unmanaged.**
    `PhotinoEx.Blazor/PhotinoExWebViewManager.cs:64` discards the pump task. Disposal completes the channel, but the infinite `ReadAsync()` loop can then fault. The window event subscription is also never removed.
 
-4. **Medium — Windows dialogs leak COM shell items.**
+4. **Done — Windows dialogs leak COM shell items.**
    `PhotinoEx.Core/Platform/Windows/Dialog/WinPhotinoExDialog.cs:50,101,174,192` creates `IShellItem` objects without releasing them. Only the dialogs are released.
 
 5. **Medium — The solution builds with 78 warnings.**

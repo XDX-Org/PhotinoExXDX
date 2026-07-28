@@ -3173,7 +3173,7 @@ public class PhotinoExWindow
 
     //NOTE: There is 1 callback from C++ to C# which is automatically registered. The .NET callback appropriate for the custom scheme is handled in OnCustomScheme().
 
-    public delegate Stream NetCustomSchemeDelegate(object sender, string scheme, string url, out string contentType);
+    public delegate Stream? NetCustomSchemeDelegate(object? sender, string? scheme, string url, out string contentType);
 
     internal Dictionary<string, NetCustomSchemeDelegate> CustomSchemes = new();
 
@@ -3255,7 +3255,8 @@ public class PhotinoExWindow
             throw new ApplicationException($"A handler for the custom scheme '{scheme}' has not been registered.");
         }
 
-        var result = this.CustomSchemes[scheme].Invoke(this, scheme, url, out contentType);
+        var result = this.CustomSchemes[scheme].Invoke(this, scheme, url, out contentType)
+            ?? throw new ApplicationException($"The handler for custom scheme '{scheme}' returned no content.");
 
         var memoryStream = new MemoryStream();
         result.CopyTo(memoryStream);

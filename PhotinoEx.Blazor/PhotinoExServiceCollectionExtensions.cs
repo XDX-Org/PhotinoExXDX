@@ -24,7 +24,7 @@ public static class PhotinoExServiceCollectionExtensions
         return services
             .AddScoped(sp =>
             {
-                var handler = sp.GetService<PhotinoExHttpHandler>();
+                var handler = sp.GetRequiredService<PhotinoExHttpHandler>();
                 return new HttpClient(handler)
                 {
                     BaseAddress = new Uri(PhotinoExWebViewManager.AppBaseUri)
@@ -32,8 +32,8 @@ public static class PhotinoExServiceCollectionExtensions
             })
             .AddSingleton(sp =>
             {
-                var manager = sp.GetService<PhotinoExWebViewManager>();
-                var store = sp.GetService<JSComponentConfigurationStore>();
+                var manager = sp.GetRequiredService<PhotinoExWebViewManager>();
+                var store = sp.GetRequiredService<JSComponentConfigurationStore>();
 
                 return new BlazorWindowRootComponents(manager, store);
             })

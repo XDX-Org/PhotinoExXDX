@@ -15,12 +15,12 @@ public class PhotinoExBlazorAppBuilder
         Services = new ServiceCollection();
     }
 
-    public static PhotinoExBlazorAppBuilder CreateDefault(string[] args = default)
+    public static PhotinoExBlazorAppBuilder CreateDefault(string[]? args = null)
     {
         return CreateDefault(null, args);
     }
 
-    public static PhotinoExBlazorAppBuilder CreateDefault(IFileProvider fileProvider, string[] args = default)
+    public static PhotinoExBlazorAppBuilder CreateDefault(IFileProvider? fileProvider, string[]? args = null)
     {
         // We don't use the args for anything right now, but we want to accept them
         // here so that it shows up this way in the project templates.
@@ -39,7 +39,7 @@ public class PhotinoExBlazorAppBuilder
 
     public IServiceCollection Services { get; }
 
-    public PhotinoExBlazorApp Build(Action<IServiceProvider> serviceProviderOptions = null)
+    public PhotinoExBlazorApp Build(Action<IServiceProvider>? serviceProviderOptions = null)
     {
         // register root components with DI container
         // Services.AddSingleton(RootComponents);

@@ -69,7 +69,7 @@ public class PhotinoExWebViewManager : WebViewManager
         _messagePumpTask = Task.Run(MessagePump);
     }
 
-    public Stream HandleWebRequest(object sender, string schema, string url, out string contentType)
+    public Stream? HandleWebRequest(object? sender, string? schema, string url, out string contentType)
     {
         // It would be better if we were told whether or not this is a navigation request, but
         // since we're not, guess.
@@ -86,12 +86,14 @@ public class PhotinoExWebViewManager : WebViewManager
             && TryGetResponseContent(url, !hasFileExtension, out var statusCode, out var statusMessage,
                 out var content, out var headers))
         {
-            headers.TryGetValue("Content-Type", out contentType);
+            contentType = headers.TryGetValue("Content-Type", out var value)
+                ? value ?? "application/octet-stream"
+                : "application/octet-stream";
             return content;
         }
         else
         {
-            contentType = default;
+            contentType = string.Empty;
             return null;
         }
     }
