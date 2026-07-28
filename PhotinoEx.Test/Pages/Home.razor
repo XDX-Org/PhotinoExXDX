@@ -15,8 +15,11 @@
 <button @onclick="CheckDevTools">Check Dev Tools</button>
 <button @onclick="TopMost">Check Top Most</button>
 <button @onclick="CallTray">Call Tray Test</button>
+<button @onclick="ToggleBrowserMenuItem">Browser tray item: @_showBrowserMenuItem</button>
 
 @code {
+    private bool _showBrowserMenuItem;
+
 
     private async Task OpenFile()
     {
@@ -124,6 +127,22 @@
                     window.SetMinimized(false);
                     return Task.CompletedTask;
                 }),
+                new TrayMenuCommand(
+                    "browser",
+                    "Open browser",
+                    _ =>
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "https://github.com/XDX-Org/PhotinoExXDX",
+                            UseShellExecute = true,
+                        });
+                        return Task.CompletedTask;
+                    },
+                    GetState: _ => ValueTask.FromResult(
+                        new TrayMenuItemState(IsVisible: _showBrowserMenuItem)
+                    )
+                ),
                 new TrayMenuSeparator("separator"),
                 new TrayMenuCommand("exit", "Exit", _ =>
                 {
@@ -141,4 +160,6 @@
             }
         };
     }
+
+    private void ToggleBrowserMenuItem() => _showBrowserMenuItem = !_showBrowserMenuItem;
 }

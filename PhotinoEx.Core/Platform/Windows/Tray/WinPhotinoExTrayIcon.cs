@@ -165,7 +165,7 @@ internal sealed class WinPhotinoExTrayIcon : IPhotinoExTrayIcon
         }
     }
 
-    private static IntPtr BuildMenu(IReadOnlyList<TrayMenuItem> items, Dictionary<uint, TrayMenuCommand> commands, ref uint nextCommand)
+    private IntPtr BuildMenu(IReadOnlyList<TrayMenuItem> items, Dictionary<uint, TrayMenuCommand> commands, ref uint nextCommand)
     {
         var menu = CreatePopupMenu();
         foreach (var item in items)
@@ -176,9 +176,14 @@ internal sealed class WinPhotinoExTrayIcon : IPhotinoExTrayIcon
                     AppendMenuW(menu, MF_SEPARATOR, UIntPtr.Zero, null);
                     break;
                 case TrayMenuCommand command:
+                    var state = GetCommandState(command);
+                    if (!state.IsVisible)
+                    {
+                        break;
+                    }
                     var commandId = nextCommand++;
                     commands[commandId] = command;
-                    var flags = MF_STRING | (command.IsEnabled ? 0 : MF_GRAYED) | (command.IsChecked ? MF_CHECKED : 0);
+                    var flags = MF_STRING | (state.IsEnabled ? 0 : MF_GRAYED) | (state.IsChecked ? MF_CHECKED : 0);
                     AppendMenuW(menu, flags, (UIntPtr)commandId, command.Text);
                     break;
                 case TraySubmenu submenu:
@@ -188,6 +193,24 @@ internal sealed class WinPhotinoExTrayIcon : IPhotinoExTrayIcon
             }
         }
         return menu;
+    }
+
+    private TrayMenuItemState GetCommandState(TrayMenuCommand command)
+    {
+        if (command.GetState is null)
+        {
+            return new TrayMenuItemState(true, command.IsEnabled, command.IsChecked);
+        }
+
+        try
+        {
+            return command.GetState(CancellationToken.None).AsTask().GetAwaiter().GetResult();
+        }
+        catch (Exception exception)
+        {
+            _owner.ReportUnhandledException(exception);
+            return new TrayMenuItemState(false, false, false);
+        }
     }
 
     private async Task ExecuteCommandAsync(TrayMenuCommand command)

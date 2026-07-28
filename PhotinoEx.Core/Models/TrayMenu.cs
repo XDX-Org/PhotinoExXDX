@@ -44,12 +44,19 @@ public sealed class TrayMenu
 
 public abstract record TrayMenuItem(string Id);
 
+public sealed record TrayMenuItemState(
+    bool IsVisible = true,
+    bool IsEnabled = true,
+    bool IsChecked = false
+);
+
 public sealed record TrayMenuCommand(
     string Id,
     string Text,
     Func<CancellationToken, Task> Activated,
     bool IsEnabled = true,
-    bool IsChecked = false
+    bool IsChecked = false,
+    Func<CancellationToken, ValueTask<TrayMenuItemState>>? GetState = null
 ) : TrayMenuItem(Id);
 
 public sealed record TrayMenuSeparator(string Id) : TrayMenuItem(Id);

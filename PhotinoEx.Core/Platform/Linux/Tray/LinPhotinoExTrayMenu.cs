@@ -60,6 +60,7 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
     private readonly LinPhotinoExTray _owner;
     private readonly LinPhotinoExTrayIcon _icon;
     private Dictionary<int, TrayMenuItem> _items = [];
+    private Dictionary<int, TrayMenuItemState> _states = [];
     private TrayMenu? _menu;
     private uint _revision = 1;
 
@@ -115,7 +116,7 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
                 .Select(id => new DBusMenuProperties
                 {
                     Id = id,
-                    Properties = GetItemProperties(_items[id], propertyNames),
+                    Properties = GetItemProperties(id, _items[id], propertyNames),
                 })
                 .ToArray()
         );
@@ -127,7 +128,7 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
             throw new ArgumentException($"Unknown tray menu item ID '{id}'.", nameof(id));
         }
 
-        var properties = GetItemProperties(item, [name]);
+        var properties = GetItemProperties(id, item, [name]);
         return properties.TryGetValue(name, out var value)
             ? Task.FromResult(value)
             : throw new ArgumentException($"Unknown tray menu property '{name}'.", nameof(name));
@@ -160,16 +161,17 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
         return [];
     }
 
-    public Task<bool> AboutToShowAsync(int id)
+    public async Task<bool> AboutToShowAsync(int id)
     {
         _icon.RaiseMenuOpening();
-        return Task.FromResult(false);
+        return await RefreshStatesAsync().ConfigureAwait(false);
     }
 
-    public Task<(int[] UpdatesNeeded, int[] IdErrors)> AboutToShowGroupAsync(int[] ids)
+    public async Task<(int[] UpdatesNeeded, int[] IdErrors)> AboutToShowGroupAsync(int[] ids)
     {
         _icon.RaiseMenuOpening();
-        return Task.FromResult<(int[], int[])>(([], []));
+        var changed = await RefreshStatesAsync().ConfigureAwait(false);
+        return changed ? ([0], []) : ([], []);
     }
 
     public Task<IDisposable> WatchLayoutUpdatedAsync(Action<(uint Revision, int Parent)> handler) =>
@@ -183,6 +185,7 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
     {
         _menu = menu;
         _items = [];
+        _states = [];
         var nextId = 1;
         AddItems(menu?.Items ?? [], ref nextId);
         _revision++;
@@ -222,7 +225,7 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
         return new DBusMenuLayout
         {
             Id = parentId,
-            Properties = parentId == 0 ? new Dictionary<string, object>() : GetItemProperties(_items[parentId], propertyNames),
+            Properties = parentId == 0 ? new Dictionary<string, object>() : GetItemProperties(parentId, _items[parentId], propertyNames),
             Children = children.ToArray(),
         };
     }
@@ -230,7 +233,7 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
     private IReadOnlyList<TrayMenuItem> GetChildren(int parentId) =>
         _items.TryGetValue(parentId, out var item) && item is TraySubmenu submenu ? submenu.Items : [];
 
-    private static IDictionary<string, object> GetItemProperties(TrayMenuItem item, string[] requested)
+    private IDictionary<string, object> GetItemProperties(int id, TrayMenuItem item, string[] requested)
     {
         Dictionary<string, object> properties = item switch
         {
@@ -238,10 +241,10 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
             TrayMenuCommand command => new()
             {
                 ["label"] = command.Text,
-                ["enabled"] = command.IsEnabled,
-                ["visible"] = true,
-                ["toggle-type"] = command.IsChecked ? "checkmark" : "",
-                ["toggle-state"] = command.IsChecked ? 1 : 0,
+                ["enabled"] = GetState(id, command).IsEnabled,
+                ["visible"] = GetState(id, command).IsVisible,
+                ["toggle-type"] = GetState(id, command).IsChecked ? "checkmark" : "",
+                ["toggle-state"] = GetState(id, command).IsChecked ? 1 : 0,
             },
             TraySubmenu submenu => new()
             {
@@ -259,5 +262,44 @@ internal sealed class LinPhotinoExTrayMenu : IDBusMenu
         }
 
         return properties.Where(pair => requested.Contains(pair.Key)).ToDictionary();
+    }
+
+    private TrayMenuItemState GetState(int id, TrayMenuCommand command) =>
+        _states.TryGetValue(id, out var state)
+            ? state
+            : new TrayMenuItemState(true, command.IsEnabled, command.IsChecked);
+
+    private async Task<bool> RefreshStatesAsync()
+    {
+        var changed = false;
+        foreach (var (id, item) in _items)
+        {
+            if (item is not TrayMenuCommand { GetState: { } getState } command)
+            {
+                continue;
+            }
+
+            try
+            {
+                var state = await getState(CancellationToken.None).ConfigureAwait(false);
+                if (!_states.TryGetValue(id, out var current) || current != state)
+                {
+                    _states[id] = state;
+                    changed = true;
+                }
+            }
+            catch (Exception exception)
+            {
+                _owner.ReportUnhandledException(exception);
+            }
+        }
+
+        if (changed)
+        {
+            _revision++;
+            OnLayoutUpdated?.Invoke((_revision, 0));
+        }
+
+        return changed;
     }
 }

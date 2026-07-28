@@ -1,5 +1,6 @@
 using PhotinoEx.Core.Models;
 using PhotinoEx.Core.Platform;
+using PhotinoEx.Core.Platform.Linux.Tray;
 using Xunit;
 
 namespace PhotinoEx.Core.Tests;
@@ -86,6 +87,38 @@ public sealed class TrayTests : IDisposable
 
         Assert.True(first.IsDisposed);
         Assert.True(second.IsDisposed);
+    }
+
+    [Fact]
+    public async Task LinuxMenuRefreshesConditionalCommandVisibility()
+    {
+        var visible = false;
+        var menu = new TrayMenu
+        {
+            Items =
+            [
+                new TrayMenuCommand(
+                    "conditional",
+                    "Conditional",
+                    _ => Task.CompletedTask,
+                    GetState: _ => ValueTask.FromResult(new TrayMenuItemState(IsVisible: visible))
+                ),
+            ],
+        };
+        var owner = new LinPhotinoExTray();
+        var icon = new LinPhotinoExTrayIcon(owner, new TrayIconOptions("main", _iconPath, Menu: menu), 1);
+        var nativeMenu = new LinPhotinoExTrayMenu(owner, icon, menu);
+
+        Assert.True(await nativeMenu.AboutToShowAsync(0));
+        var hiddenLayout = await nativeMenu.GetLayoutAsync(0, -1, []);
+        var hiddenItem = Assert.IsType<DBusMenuLayout>(Assert.Single(hiddenLayout.Layout.Children));
+        Assert.False(Assert.IsType<bool>(hiddenItem.Properties["visible"]));
+
+        visible = true;
+        Assert.True(await nativeMenu.AboutToShowAsync(0));
+        var visibleLayout = await nativeMenu.GetLayoutAsync(0, -1, []);
+        var visibleItem = Assert.IsType<DBusMenuLayout>(Assert.Single(visibleLayout.Layout.Children));
+        Assert.True(Assert.IsType<bool>(visibleItem.Properties["visible"]));
     }
 
     public void Dispose() => File.Delete(_iconPath);
