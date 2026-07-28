@@ -1595,6 +1595,7 @@ public class PhotinoExWindow
         _startupParameters.FocusInHandler = OnFocusIn;
         _startupParameters.FocusOutHandler = OnFocusOut;
         _startupParameters.WebMessageRecievedHandler = OnWebMessageReceived;
+        _startupParameters.FilesDroppedHandler = OnFilesDropped;
         _startupParameters.CustomSchemeHandler = OnCustomScheme;
     }
 
@@ -1647,26 +1648,7 @@ public class PhotinoExWindow
     public PhotinoExWindow CopyFilesToClipboard(IEnumerable<string> paths)
     {
         ArgumentNullException.ThrowIfNull(paths);
-        var normalizedPaths = paths.Select(path =>
-        {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentException("Clipboard paths cannot be blank.", nameof(paths));
-            }
-
-            var fullPath = Path.GetFullPath(path);
-            if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
-            {
-                throw new FileNotFoundException("A clipboard file or directory does not exist.", fullPath);
-            }
-
-            return fullPath;
-        }).Distinct().ToArray();
-
-        if (normalizedPaths.Length == 0)
-        {
-            throw new ArgumentException("At least one file or directory is required.", nameof(paths));
-        }
+        var normalizedPaths = NormalizeFilePaths(paths, nameof(paths));
 
         if (_instance is null)
         {
@@ -1675,6 +1657,61 @@ public class PhotinoExWindow
 
         Invoke(() => _instance.SetClipboardFiles(normalizedPaths));
         return this;
+    }
+
+    /// <summary>Starts a native file drag operation.</summary>
+    /// <remarks>The operation must be called from a valid native pointer gesture.</remarks>
+    public async Task<FileDragDropEffects> BeginFileDragAsync(
+        IEnumerable<string> paths,
+        FileDragDropEffects allowedEffects = FileDragDropEffects.Copy,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const FileDragDropEffects supportedEffects =
+            FileDragDropEffects.Copy | FileDragDropEffects.Move | FileDragDropEffects.Link;
+        if (allowedEffects == FileDragDropEffects.None || (allowedEffects & ~supportedEffects) != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(allowedEffects));
+        }
+
+        var normalizedPaths = NormalizeFilePaths(paths, nameof(paths));
+        if (_instance is null)
+        {
+            throw new InvalidOperationException("File dragging is unavailable before the window is initialized.");
+        }
+
+        Task<FileDragDropEffects>? operation = null;
+        Invoke(() => operation = _instance.BeginFileDragAsync(normalizedPaths, allowedEffects, cancellationToken));
+        return await operation!;
+    }
+
+    internal static string[] NormalizeFilePaths(IEnumerable<string> paths, string parameterName)
+    {
+        var normalizedPaths = paths.Select(path =>
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException("File or directory paths cannot be blank.", parameterName);
+            }
+
+            var fullPath = Path.GetFullPath(path);
+            if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
+            {
+                throw new FileNotFoundException("A file or directory does not exist.", fullPath);
+            }
+
+            return fullPath;
+        }).Distinct().ToArray();
+
+        if (normalizedPaths.Length == 0)
+        {
+            throw new ArgumentException("At least one file or directory is required.", parameterName);
+        }
+
+        return normalizedPaths;
     }
 
     /// <summary>
@@ -3040,6 +3077,19 @@ public class PhotinoExWindow
     internal void OnWebMessageReceived(string message)
     {
         WebMessageReceived?.Invoke(this, message);
+    }
+
+    public event EventHandler<FilesDroppedEventArgs>? FilesDropped;
+
+    public PhotinoExWindow RegisterFilesDroppedHandler(EventHandler<FilesDroppedEventArgs> handler)
+    {
+        FilesDropped += handler;
+        return this;
+    }
+
+    internal void OnFilesDropped(FilesDroppedEventArgs args)
+    {
+        FilesDropped?.Invoke(this, args);
     }
 
     public delegate bool NetClosingDelegate(object sender, EventArgs? e);

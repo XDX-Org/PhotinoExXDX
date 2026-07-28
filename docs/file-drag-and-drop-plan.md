@@ -42,12 +42,12 @@ Outbound dragging must start from a real pointer gesture. `BeginFileDragAsync` s
 
 ## Phase 1: Contracts and validation
 
-- [ ] Add shared drag/drop effects, result, and inbound event models.
-- [ ] Add inbound registration and outbound start methods to the platform contract.
-- [ ] Expose `FilesDropped` and `BeginFileDragAsync` through `PhotinoExWindow`.
-- [ ] Normalize paths, remove duplicates, and reject blank or missing entries.
-- [ ] Define copy, move, link, cancellation, and unsupported-effect behavior.
-- [ ] Keep clipboard and drag/drop APIs independent.
+- [x] Add shared drag/drop effects and inbound event models.
+- [x] Add inbound registration and outbound start methods to the platform contract.
+- [x] Expose `FilesDropped` and `BeginFileDragAsync` through `PhotinoExWindow`.
+- [x] Normalize paths, remove duplicates, and reject blank or missing entries.
+- [x] Define copy, move, link, cancellation, and unsupported-effect behavior.
+- [x] Keep clipboard and drag/drop APIs independent.
 
 Completion requires platform-neutral contracts with unit tests for validation and effect negotiation.
 

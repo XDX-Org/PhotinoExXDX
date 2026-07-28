@@ -9,6 +9,7 @@ namespace PhotinoEx.Core.Platform;
 public abstract class PhotinoEx
 {
     protected Action<string>? _WebMessageReceivedCallback { get; set; }
+    protected Action<FilesDroppedEventArgs>? _filesDroppedCallback { get; set; }
     protected Action<int, int>? _resizedCallback { get; set; }
     protected Action? _maximizedCallback { get; set; }
     protected Action? _restoredCallback { get; set; }
@@ -59,6 +60,12 @@ public abstract class PhotinoEx
     public abstract void SetClipboardText(string text);
 
     public abstract void SetClipboardFiles(IReadOnlyList<string> paths);
+
+    public abstract Task<FileDragDropEffects> BeginFileDragAsync(
+        IReadOnlyList<string> paths,
+        FileDragDropEffects allowedEffects,
+        CancellationToken cancellationToken
+    );
 
     public abstract void Close();
 
@@ -204,6 +211,16 @@ public abstract class PhotinoEx
     public abstract void SetRestoredCallback(Action callback);
 
     public abstract void SetMinimizedCallback(Action callback);
+
+    public void SetFilesDroppedCallback(Action<FilesDroppedEventArgs> callback)
+    {
+        _filesDroppedCallback = callback;
+    }
+
+    public void InvokeFilesDropped(FilesDroppedEventArgs args)
+    {
+        _filesDroppedCallback?.Invoke(args);
+    }
 
     // Tested - linux / windows
     // untested - apple

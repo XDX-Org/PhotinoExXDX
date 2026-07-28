@@ -64,6 +64,12 @@ public class MacPhotinoEx : PhotinoEx
         }
     }
 
+    public override Task<FileDragDropEffects> BeginFileDragAsync(
+        IReadOnlyList<string> paths,
+        FileDragDropEffects allowedEffects,
+        CancellationToken cancellationToken
+    ) => throw new PlatformNotSupportedException("Outbound file dragging is not implemented on macOS.");
+
     private static IntPtr GetClass(string name) => objc_getClass(name);
 
     private static IntPtr GetSelector(string name) => sel_registerName(name);

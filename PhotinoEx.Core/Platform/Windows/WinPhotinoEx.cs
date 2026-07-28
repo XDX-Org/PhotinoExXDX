@@ -74,6 +74,7 @@ public class WinPhotinoEx : PhotinoEx
         MaxHeight = _params.MaxHeight;
 
         _WebMessageReceivedCallback = _params.WebMessageRecievedHandler;
+        _filesDroppedCallback = _params.FilesDroppedHandler;
         _resizedCallback = _params.ResizedHandler;
         _movedCallback = _params.MovedHandler;
         _closingCallback = _params.ClosingHandler;
@@ -251,6 +252,12 @@ public class WinPhotinoEx : PhotinoEx
             Marshal.WriteInt32(header, 16, 1);
         });
     }
+
+    public override Task<FileDragDropEffects> BeginFileDragAsync(
+        IReadOnlyList<string> paths,
+        FileDragDropEffects allowedEffects,
+        CancellationToken cancellationToken
+    ) => throw new PlatformNotSupportedException("Outbound file dragging is not implemented on Windows.");
 
     private void SetClipboardData(
         uint format,

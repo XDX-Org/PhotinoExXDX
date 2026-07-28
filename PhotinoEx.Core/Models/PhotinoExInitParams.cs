@@ -24,6 +24,7 @@ public class PhotinoExInitParams
     public Action? MinimizedHandler { get; set; }
     public Action<int, int>? MovedHandler { get; set; }
     public Action<string>? WebMessageRecievedHandler { get; set; }
+    public Action<FilesDroppedEventArgs>? FilesDroppedHandler { get; set; }
     public List<string>? CustomSchemeNames;
     public WebResourceRequestedCallback? CustomSchemeHandler { get; set; }
 

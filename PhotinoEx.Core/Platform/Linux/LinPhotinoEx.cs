@@ -79,6 +79,7 @@ public class LinPhotinoEx : PhotinoEx
         MaxHeight = _params.MaxHeight;
 
         _WebMessageReceivedCallback = _params.WebMessageRecievedHandler;
+        _filesDroppedCallback = _params.FilesDroppedHandler;
         _resizedCallback = _params.ResizedHandler;
         _movedCallback = _params.MovedHandler;
         _closingCallback = _params.ClosingHandler;
@@ -433,6 +434,12 @@ public class LinPhotinoEx : PhotinoEx
             throw new InvalidOperationException("GTK rejected the clipboard file list.");
         }
     }
+
+    public override Task<FileDragDropEffects> BeginFileDragAsync(
+        IReadOnlyList<string> paths,
+        FileDragDropEffects allowedEffects,
+        CancellationToken cancellationToken
+    ) => throw new PlatformNotSupportedException("Outbound file dragging is not implemented on Linux.");
 
     public override void Close()
     {
