@@ -44,6 +44,7 @@ PhotinoEx.Core
 - The selected `Platform.PhotinoEx` instance after initialization.
 - Fluent window configuration and runtime window operations.
 - Window lifecycle, native callbacks, web messages, custom URL schemes, dialogs, and notifications.
+- Native text and file-list clipboard operations.
 - UI-thread dispatch through `Invoke`.
 
 Many properties have two phases: before initialization they update startup parameters; afterward they delegate to the native implementation. Operations that require a native window reject calls made before initialization.
@@ -66,7 +67,9 @@ Platform-specific code is isolated under `PhotinoEx.Core/Platform/<OS>`. Shared 
 
 Dialogs implement `IPhotinoExDialog` and are attached to the platform instance. Windows and Linux provide implementations for file, folder, save, and message dialogs.
 
-Tray support is represented by `IPhotinoExTray` and `IPhotinoExTrayIcon`. The current concrete implementation is Linux-only and uses the GTK application's D-Bus connection. A platform instance exposes optional `Dialog` and `Tray` services, so callers must account for platform availability and initialization.
+Tray support is represented by `IPhotinoExTray` and `IPhotinoExTrayIcon`. Windows uses the notification-area APIs and Linux uses the GTK application's D-Bus connection; macOS tray support remains pending. A platform instance exposes optional `Dialog` and `Tray` services, so callers must account for platform availability and initialization.
+
+Clipboard operations are part of the platform contract and are exposed through `PhotinoExWindow`. Text and mixed file/directory lists use native OS clipboard formats; no browser Clipboard API or JavaScript interop is involved. Windows uses Win32 clipboard formats, Linux uses GTK/GDK, and macOS uses `NSPasteboard` interop. See [clipboard.md](clipboard.md).
 
 ## Blazor layer
 
@@ -78,6 +81,7 @@ Tray support is represented by `IPhotinoExTray` and `IPhotinoExTrayIcon`. The cu
 - `PhotinoExWebViewManager` and Blazor WebView services.
 - Root-component and JavaScript-component infrastructure.
 - Dispatcher, synchronization context, HTTP handler, and `HttpClient`.
+- `IPhotinoExClipboard`, which delegates Blazor clipboard requests to the native window.
 - A physical `wwwroot` provider by default, or a caller-supplied `IFileProvider`.
 
 `PhotinoExBlazorApp.Initialize()` connects these services, configures the main window, registers the local-resource scheme, and adds root components. `Run()` navigates to the configured start URL and enters `PhotinoExWindow.WaitForClose()`.

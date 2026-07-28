@@ -50,6 +50,8 @@ await Clipboard.CopyFilesAsync(
 );
 ```
 
+See [Native Clipboard](docs/clipboard.md) for implementation status, platform formats, and Core API usage.
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first

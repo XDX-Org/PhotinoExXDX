@@ -15,7 +15,11 @@ The implementation must use the operating system's notification-area APIs. The m
 
 ## Current state
 
-The repository already has `IPhotinoExTray`, `IPhotinoExTrayIcon`, `LinPhotinoExTray`, and `LinPhotinoExTrayIcon`. The Linux tray is attached when `LinPhotinoEx` creates its GTK application, but its icon methods currently only update managed fields. It does not register a StatusNotifierItem, publish a menu, or emit click events. Windows and macOS have no tray implementations.
+Windows and Linux tray support is implemented. Both platforms use the shared `IPhotinoExTray` and `IPhotinoExTrayIcon` contracts, support registration and lifecycle updates, route click events, and build native menus from the shared menu model.
+
+- Windows uses `Shell_NotifyIcon`, a dedicated native message window, and `TrackPopupMenuEx`. Icons currently require `.ico` files.
+- Linux registers a StatusNotifierItem and exports a `com.canonical.dbusmenu` menu over D-Bus.
+- macOS remains pending because its window backend is not yet usable.
 
 The former hard-coded `PhotinoExWindow.ActivateTrayAndIcon()` helper has been removed in favor of the registration API below.
 
@@ -247,13 +251,14 @@ Taskbar or dock icons have the same basic limitation: assigning a GIF does not m
 
 ## Suggested implementation order
 
-1. Add the shared options, event arguments, menu model, exception, and revised interfaces.
-2. Expose `PhotinoExWindow.Tray` and remove the hard-coded `ActivateTrayAndIcon()` path.
-3. Complete Linux StatusNotifierItem registration and lifecycle without menus.
-4. Add Linux click routing and D-Bus menu export.
-5. Add the Windows notification icon, click routing, and native popup menu.
-6. Add lifecycle cleanup, Explorer restart recovery, and error propagation.
-7. Add macOS after its platform window implementation is usable.
+- [x] Add the shared options, event arguments, menu model, exception, and revised interfaces.
+- [x] Expose `PhotinoExWindow.Tray` and remove the hard-coded `ActivateTrayAndIcon()` path.
+- [x] Complete Linux StatusNotifierItem registration and lifecycle.
+- [x] Add Linux click routing and D-Bus menu export.
+- [x] Add the Windows notification icon, click routing, and native popup menu.
+- [x] Add deterministic lifecycle cleanup and error propagation.
+- [ ] Re-register Windows icons after Explorer's `TaskbarCreated` message.
+- [ ] Add macOS tray support after its platform window implementation is usable.
 
 ## Verification
 
