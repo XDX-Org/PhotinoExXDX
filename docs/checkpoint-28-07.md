@@ -5,7 +5,7 @@
 1. **Done — `Location` setter ignores the requested value after initialization.**
    `PhotinoEx.Core/PhotinoExWindow.cs:808` calls `SetPosition(Location)` instead of `SetPosition(value)`, so the native window receives its current position.
 
-2. **High — Blazor trusts messages from any navigated page as local application messages.**
+2. **Done — Blazor trusts messages from any navigated page as local application messages.**
    `PhotinoEx.Blazor/PhotinoExWebViewManager.cs:43-54` accepts every webview message and assigns the trusted local origin unconditionally. External content could invoke the Blazor message channel if the webview navigates away.
 
 3. **Medium — Webview message-pump lifetime is unmanaged.**

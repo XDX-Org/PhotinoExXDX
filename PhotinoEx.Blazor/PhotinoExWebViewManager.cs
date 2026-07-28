@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using PhotinoEx.Core;
+using PhotinoEx.Core.Models;
 
 namespace PhotinoEx.Blazor;
 
@@ -21,6 +22,8 @@ public class PhotinoExWebViewManager : WebViewManager
     private readonly PhotinoExWindow _exWindow;
     private readonly Channel<string> _channel;
     private readonly Uri _appBaseUri;
+    private readonly EventHandler<WebMessageReceivedEventArgs> _webMessageReceivedHandler;
+    private readonly Task _messagePumpTask;
 
     // On Windows, we can't use a custom scheme to host the initial HTML,
     // because webview2 won't let you do top-level navigation to such a URL.
@@ -38,11 +41,17 @@ public class PhotinoExWebViewManager : WebViewManager
     {
         _exWindow = exWindow ?? throw new ArgumentNullException(nameof(exWindow));
         _appBaseUri = config.Value.AppBaseUri;
+        _channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false,
+            AllowSynchronousContinuations = false
+        });
 
         // Create a scheduler that uses one threads.
         var sts = new Utils.PhotinoExSynchronousTaskScheduler();
 
-        _exWindow.WebMessageReceivedWithSource += (sender, args) =>
+        _webMessageReceivedHandler = (sender, args) =>
         {
             if (args.Source is null || !IsSameOrigin(args.Source, _appBaseUri))
             {
@@ -55,15 +64,9 @@ public class PhotinoExWebViewManager : WebViewManager
                 MessageReceived(args.Source, (string) message!);
             }, args.Message, CancellationToken.None, TaskCreationOptions.DenyChildAttach, sts);
         };
+        _exWindow.WebMessageReceivedWithSource += _webMessageReceivedHandler;
 
-        //Create channel and start reader
-        _channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
-        {
-            SingleReader = true,
-            SingleWriter = false,
-            AllowSynchronousContinuations = false
-        });
-        Task.Run(MessagePump);
+        _messagePumpTask = Task.Run(MessagePump);
     }
 
     public Stream HandleWebRequest(object sender, string schema, string url, out string contentType)
@@ -100,9 +103,9 @@ public class PhotinoExWebViewManager : WebViewManager
 
     protected override void SendMessage(string message)
     {
-        while (!_channel.Writer.TryWrite(message))
+        if (!_channel.Writer.TryWrite(message))
         {
-            Thread.Sleep(200);
+            throw new ObjectDisposedException(nameof(PhotinoExWebViewManager));
         }
     }
 
@@ -113,22 +116,17 @@ public class PhotinoExWebViewManager : WebViewManager
 
     private async Task MessagePump()
     {
-        var reader = _channel.Reader;
-
-        while (true)
+        await foreach (var message in _channel.Reader.ReadAllAsync())
         {
-            var message = await reader.ReadAsync();
             await _exWindow.SendWebMessageAsync(message);
         }
     }
 
-    protected override ValueTask DisposeAsyncCore()
+    protected override async ValueTask DisposeAsyncCore()
     {
-        //complete channel
-        _channel.Writer.Complete();
-
-
-        //continue disposing
-        return base.DisposeAsyncCore();
+        _exWindow.WebMessageReceivedWithSource -= _webMessageReceivedHandler;
+        _channel.Writer.TryComplete();
+        await _messagePumpTask.ConfigureAwait(false);
+        await base.DisposeAsyncCore();
     }
 }
