@@ -1,7 +1,6 @@
 using PhotinoEx.Core;
 using PhotinoEx.Core.Models;
 using PhotinoEx.Core.Platform.Linux;
-using PhotinoEx.Core.Platform.Windows.FileDragDrop;
 using PhotinoEx.Blazor;
 using Gdk;
 using System.Runtime.Versioning;
@@ -11,25 +10,6 @@ namespace PhotinoEx.Core.Tests;
 
 public sealed class FileDragDropTests
 {
-    [Fact]
-    public void WindowsDropTargetReadsFileDropPayload()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-
-        var expected = Path.GetFullPath(typeof(FileDragDropTests).Assembly.Location);
-        FilesDroppedEventArgs? received = null;
-        var target = new WinDropTarget(IntPtr.Zero, args => received = args);
-        uint effect = (uint) FileDragDropEffects.Copy;
-        var point = new System.Drawing.Point(12, 34);
-        var data = new WinFileDataObject([expected]);
-
-        Assert.Equal(0, target.DragEnter(data, 0, point, ref effect));
-        Assert.Equal(0, target.Drop(data, 0, point, ref effect));
-
-        Assert.Equal([expected], received!.Paths);
-        Assert.Equal(FileDragDropEffects.Copy, received.Effect);
-    }
-
     [Fact]
     public void BlazorServiceForwardsDropsAndUnsubscribesWhenDisposed()
     {

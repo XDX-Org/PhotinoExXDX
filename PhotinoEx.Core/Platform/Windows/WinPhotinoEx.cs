@@ -35,12 +35,10 @@ public class WinPhotinoEx : PhotinoEx
     private SynchronizationContext _syncContext { get; set; }
     private bool _windowsThemeIsDark { get; set; }
     private const uint WM_USER_INVOKE = (WinConstants.WM_USER + 0x0002);
+    private const uint WM_USER_POST = (WinConstants.WM_USER + 0x0003);
     private IntPtr messageLoopRootWindowHandle;
     private Dictionary<IntPtr, WinPhotinoEx> HWNDToPhotino = [];
     private string? _webview2RuntimePath;
-    private WinDropTarget? _dropTarget;
-    private bool _oleInitialized;
-    private readonly List<IntPtr> _dropTargetWindows = [];
 
     public WinPhotinoEx(PhotinoExInitParams exInitParams)
     {
@@ -200,7 +198,7 @@ public class WinPhotinoEx : PhotinoEx
             IntPtr.Zero
         );
 
-        Dialog = new WinPhotinoExDialog(_hwnd);
+        Dialog = new WinPhotinoExDialog(_hwnd, Post);
         SetAppTheme(_windowsThemeIsDark);
         SetBackdropTheme();
 
@@ -484,21 +482,6 @@ public class WinPhotinoEx : PhotinoEx
                 }
             case WinConstants.WM_DESTROY:
                 {
-                    if (HWNDToPhotino.TryGetValue(hwnd, out var photino))
-                    {
-                        foreach (var dropTargetWindow in photino._dropTargetWindows)
-                        {
-                            WinApi.RevokeDragDrop(dropTargetWindow);
-                        }
-                        photino._dropTargetWindows.Clear();
-                        photino._dropTarget = null;
-                        if (photino._oleInitialized)
-                        {
-                            WinApi.OleUninitialize();
-                            photino._oleInitialized = false;
-                        }
-                    }
-
                     HWNDToPhotino.Remove(hwnd);
                     if (hwnd == messageLoopRootWindowHandle)
                     {
@@ -513,6 +496,20 @@ public class WinPhotinoEx : PhotinoEx
                     var callback = (Action) callbackHandle.Target!;
 
                     callback?.Invoke();
+
+                    return IntPtr.Zero;
+                }
+            case WM_USER_POST:
+                {
+                    var callbackHandle = GCHandle.FromIntPtr(wParam);
+                    try
+                    {
+                        ((Action) callbackHandle.Target!).Invoke();
+                    }
+                    finally
+                    {
+                        callbackHandle.Free();
+                    }
 
                     return IntPtr.Zero;
                 }
@@ -770,41 +767,7 @@ public class WinPhotinoEx : PhotinoEx
         options.AdditionalBrowserArguments = sb.ToString();
         WebViewEnvironment = await CoreWebView2Environment.CreateAsync(runtimePath, _temporaryFilesPath, options);
         WebViewController = await WebViewEnvironment.CreateCoreWebView2ControllerAsync(_hwnd);
-        // Let the native host handle files dropped from Explorer. If WebView2 accepts
-        // external drops, it treats assemblies as page content and downloads them.
-        WebViewController.AllowExternalDrop = false;
-        var oleInitializeResult = WinApi.OleInitialize(IntPtr.Zero);
-        if (oleInitializeResult < 0)
-        {
-            Marshal.ThrowExceptionForHR(oleInitializeResult);
-        }
-        _oleInitialized = true;
-        _dropTarget = new WinDropTarget(_hwnd, args => _filesDroppedCallback?.Invoke(args));
-        try
-        {
-            RegisterDropTarget(_hwnd, replaceExisting: false);
-            WinApi.EnumChildWindows(
-                _hwnd,
-                (child, _) =>
-                {
-                    RegisterDropTarget(child, replaceExisting: true);
-                    return true;
-                },
-                IntPtr.Zero
-            );
-        }
-        catch
-        {
-            foreach (var dropTargetWindow in _dropTargetWindows)
-            {
-                WinApi.RevokeDragDrop(dropTargetWindow);
-            }
-            _dropTargetWindows.Clear();
-            _dropTarget = null;
-            WinApi.OleUninitialize();
-            _oleInitialized = false;
-            throw;
-        }
+        WebViewController.AllowExternalDrop = true;
         WebViewWindow = WebViewController.CoreWebView2;
 
         var settings = WebViewWindow.Settings;
@@ -814,11 +777,28 @@ public class WinPhotinoEx : PhotinoEx
         settings.IsWebMessageEnabled = true;
 
         await WebViewWindow.AddScriptToExecuteOnDocumentCreatedAsync(
-            "window.external = { sendMessage: function(message) { window.chrome.webview.postMessage(message); }, receiveMessage: function(callback) { window.chrome.webview.addEventListener(\'message\', function(e) { callback(e.data); }); } };");
+            "window.external = { sendMessage: function(message) { window.chrome.webview.postMessage(message); }, receiveMessage: function(callback) { window.chrome.webview.addEventListener('message', function(e) { callback(e.data); }); } };"
+            + "document.addEventListener('dragover', function(e) { if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }, true);"
+            + "document.addEventListener('drop', function(e) { var files = e.dataTransfer ? Array.from(e.dataTransfer.files) : []; if (files.length) { e.preventDefault(); e.stopPropagation(); window.chrome.webview.postMessageWithAdditionalObjects('__photino_files_dropped__', files); } }, true);"
+        );
         WebViewWindow.WebMessageReceived += (_, args) =>
         {
             // Console.WriteLine(args.TryGetWebMessageAsString());
             var message = args.TryGetWebMessageAsString();
+            if (message == "__photino_files_dropped__")
+            {
+                var paths = args.AdditionalObjects
+                    .OfType<CoreWebView2File>()
+                    .Select(file => file.Path)
+                    .ToArray();
+                if (paths.Length > 0)
+                {
+                    _filesDroppedCallback?.Invoke(
+                        new FilesDroppedEventArgs(paths, FileDragDropEffects.Copy, 0, 0)
+                    );
+                }
+                return;
+            }
             _WebMessageReceivedWithSourceCallback?.Invoke(new Uri(args.Source), message);
             _WebMessageReceivedCallback?.Invoke(message);
         };
@@ -896,21 +876,6 @@ public class WinPhotinoEx : PhotinoEx
         FocusWebView2();
     }
 
-    private void RegisterDropTarget(IntPtr window, bool replaceExisting)
-    {
-        if (replaceExisting)
-        {
-            WinApi.RevokeDragDrop(window);
-        }
-
-        var result = WinApi.RegisterDragDrop(window, _dropTarget!);
-        if (result < 0)
-        {
-            Marshal.ThrowExceptionForHR(result);
-        }
-
-        _dropTargetWindows.Add(window);
-    }
 
     public void Show(bool isAlreadyShown)
     {
@@ -1492,6 +1457,16 @@ public class WinPhotinoEx : PhotinoEx
         finally
         {
             callbackHandle.Free();
+        }
+    }
+
+    private void Post(Action callback)
+    {
+        var callbackHandle = GCHandle.Alloc(callback);
+        if (!WinApi.PostMessage(_hwnd, WM_USER_POST, GCHandle.ToIntPtr(callbackHandle), IntPtr.Zero))
+        {
+            callbackHandle.Free();
+            throw new InvalidOperationException("Could not post work to the window message loop.");
         }
     }
 }

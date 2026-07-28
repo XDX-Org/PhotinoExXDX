@@ -9,14 +9,6 @@ namespace PhotinoEx.Core.Platform.Windows.Utils;
 
 internal static class WinApi
 {
-    public delegate bool EnumWindowsDelegate(IntPtr hwnd, IntPtr parameter);
-
-    [DllImport("ole32.dll")]
-    public static extern int OleInitialize(IntPtr reserved);
-
-    [DllImport("ole32.dll")]
-    public static extern void OleUninitialize();
-
     [DllImport("ole32.dll")]
     public static extern int DoDragDrop(
         [MarshalAs(UnmanagedType.Interface)] IDataObject dataObject,
@@ -24,15 +16,6 @@ internal static class WinApi
         uint allowedEffects,
         out uint performedEffect
     );
-
-    [DllImport("ole32.dll")]
-    public static extern int RegisterDragDrop(IntPtr hwnd, IWinDropTarget dropTarget);
-
-    [DllImport("ole32.dll")]
-    public static extern int RevokeDragDrop(IntPtr hwnd);
-
-    [DllImport("ole32.dll")]
-    public static extern void ReleaseStgMedium(ref STGMEDIUM medium);
 
     #region GDI
 
@@ -135,12 +118,6 @@ internal static class WinApi
     public static extern bool GetClientRect(IntPtr hWnd, out Rect lpRect);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool EnumChildWindows(IntPtr parent, EnumWindowsDelegate callback, IntPtr parameter);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool ScreenToClient(IntPtr hwnd, ref Point point);
-
-    [DllImport("user32.dll", SetLastError = true)]
     public static extern bool DestroyWindow(IntPtr hWnd);
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -151,6 +128,9 @@ internal static class WinApi
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern IntPtr SendMessage(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool PostMessage(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint GetDpiForWindow(IntPtr hwnd);

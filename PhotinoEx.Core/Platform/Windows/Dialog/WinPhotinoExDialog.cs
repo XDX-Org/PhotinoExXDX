@@ -9,13 +9,21 @@ namespace PhotinoEx.Core.Platform.Windows.Dialog;
 public class WinPhotinoExDialog : IPhotinoExDialog
 {
     private IntPtr _hwnd { get; set; }
+    private readonly Action<Action> _post;
 
-    public WinPhotinoExDialog(IntPtr hwnd)
+    // Native modal dialogs must be posted after the current WebView2 callback returns;
+    // opening one inside the callback can trigger WebView2's reentrancy timeout and terminate the process.
+    // https://github.com/MicrosoftEdge/WebView2Feedback/issues/4734
+    public WinPhotinoExDialog(IntPtr hwnd, Action<Action> post)
     {
         _hwnd = hwnd;
+        _post = post;
     }
 
-    public Task<List<string>> ShowOpenFileAsync(string title, string? path, bool multiSelect, List<FileFilter>? filterPatterns)
+    public Task<List<string>> ShowOpenFileAsync(string title, string? path, bool multiSelect, List<FileFilter>? filterPatterns) =>
+        Defer(() => ShowOpenFile(title, path, multiSelect, filterPatterns));
+
+    private List<string> ShowOpenFile(string title, string? path, bool multiSelect, List<FileFilter>? filterPatterns)
     {
         var dialog = CreateDialog<IFileOpenDialog>(WinConstants.CLSID_FileOpenDialog);
         var result = new List<string>();
@@ -55,7 +63,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (hr == WinConstants.ERROR_CANCELLED)
             {
-                return Task.FromResult(result);
+                return result;
             }
 
             if (hr != WinConstants.S_OK)
@@ -63,7 +71,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
                 Marshal.ThrowExceptionForHR(hr);
             }
 
-            return Task.FromResult(GetResults(dialog, multiSelect));
+            return GetResults(dialog, multiSelect);
         }
         catch (Exception e)
         {
@@ -76,7 +84,10 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         }
     }
 
-    public Task<List<string>> ShowOpenFolderAsync(string title, string? path, bool multiSelect)
+    public Task<List<string>> ShowOpenFolderAsync(string title, string? path, bool multiSelect) =>
+        Defer(() => ShowOpenFolder(title, path, multiSelect));
+
+    private List<string> ShowOpenFolder(string title, string? path, bool multiSelect)
     {
         var dialog = CreateDialog<IFileOpenDialog>(WinConstants.CLSID_FileOpenDialog);
         var result = new List<string>();
@@ -102,7 +113,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (hr == WinConstants.ERROR_CANCELLED)
             {
-                return Task.FromResult(result);
+                return result;
             }
 
             if (hr != WinConstants.S_OK)
@@ -110,7 +121,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
                 Marshal.ThrowExceptionForHR(hr);
             }
 
-            return Task.FromResult(GetResults(dialog, multiSelect));
+            return GetResults(dialog, multiSelect);
         }
         catch (Exception e)
         {
@@ -124,7 +135,11 @@ public class WinPhotinoExDialog : IPhotinoExDialog
     }
 
     public Task<string> ShowSaveFileAsync(string title, string? path, List<FileFilter>? filterPatterns, string defaultExtension = "txt",
-        string defaultFileName = "PhotinoExFile")
+        string defaultFileName = "PhotinoExFile") =>
+        Defer(() => ShowSaveFile(title, path, filterPatterns, defaultExtension, defaultFileName));
+
+    private string ShowSaveFile(string title, string? path, List<FileFilter>? filterPatterns, string defaultExtension,
+        string defaultFileName)
     {
         var dialog = CreateDialog<IFileSaveDialog>(WinConstants.CLSID_FileSaveDialog);
 
@@ -171,7 +186,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
             if (hr == WinConstants.ERROR_CANCELLED)
             {
-                return Task.FromResult(string.Empty);
+                return string.Empty;
             }
 
             if (hr != WinConstants.S_OK)
@@ -183,7 +198,7 @@ public class WinPhotinoExDialog : IPhotinoExDialog
             try
             {
                 item.GetDisplayName(WinConstants.SIGDN_FILESYSPATH, out string pathToUse);
-                return Task.FromResult(pathToUse);
+                return pathToUse;
             }
             finally
             {
@@ -196,7 +211,10 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         }
     }
 
-    public Task<DialogResult> ShowMessageAsync(string title, string text, DialogButtons buttons, DialogIcon icon)
+    public Task<DialogResult> ShowMessageAsync(string title, string text, DialogButtons buttons, DialogIcon icon) =>
+        Defer(() => ShowMessage(title, text, buttons, icon));
+
+    private DialogResult ShowMessage(string title, string text, DialogButtons buttons, DialogIcon icon)
     {
         uint flags = 0;
 
@@ -243,22 +261,40 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         switch (result)
         {
             case WinConstants.IDOK:
-                return Task.FromResult(DialogResult.Ok);
+                return DialogResult.Ok;
             case WinConstants.IDCANCEL:
-                return Task.FromResult(DialogResult.Cancel);
+                return DialogResult.Cancel;
             case WinConstants.IDYES:
-                return Task.FromResult(DialogResult.Yes);
+                return DialogResult.Yes;
             case WinConstants.IDNO:
-                return Task.FromResult(DialogResult.No);
+                return DialogResult.No;
             case WinConstants.IDABORT:
-                return Task.FromResult(DialogResult.Abort);
+                return DialogResult.Abort;
             case WinConstants.IDRETRY:
-                return Task.FromResult(DialogResult.Retry);
+                return DialogResult.Retry;
             case WinConstants.IDIGNORE:
-                return Task.FromResult(DialogResult.Ignore);
+                return DialogResult.Ignore;
             default:
-                return Task.FromResult(DialogResult.Cancel);
+                return DialogResult.Cancel;
         }
+    }
+
+    private Task<T> Defer<T>(Func<T> operation)
+    {
+        var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            _post(() =>
+            {
+                try { completion.SetResult(operation()); }
+                catch (Exception exception) { completion.SetException(exception); }
+            });
+        }
+        catch (Exception exception)
+        {
+            completion.SetException(exception);
+        }
+        return completion.Task;
     }
 
     private List<string> GetResults(IFileOpenDialog dialog, bool multiSelect)
