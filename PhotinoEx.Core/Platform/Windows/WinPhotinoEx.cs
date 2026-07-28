@@ -38,6 +38,9 @@ public class WinPhotinoEx : PhotinoEx
     private IntPtr messageLoopRootWindowHandle;
     private Dictionary<IntPtr, WinPhotinoEx> HWNDToPhotino = [];
     private string? _webview2RuntimePath;
+    private WinDropTarget? _dropTarget;
+    private bool _oleInitialized;
+    private readonly List<IntPtr> _dropTargetWindows = [];
 
     public WinPhotinoEx(PhotinoExInitParams exInitParams)
     {
@@ -209,6 +212,7 @@ public class WinPhotinoEx : PhotinoEx
         }
 
         HWNDToPhotino.Add(_hwnd, this);
+        WinApi.DragAcceptFiles(_hwnd, true);
 
         if (!string.IsNullOrEmpty(_params.WindowIconFile))
         {
@@ -429,6 +433,22 @@ public class WinPhotinoEx : PhotinoEx
 
                     break;
                 }
+            case WinConstants.WM_DROPFILES:
+                {
+                    try
+                    {
+                        if (HWNDToPhotino.TryGetValue(hwnd, out var photino))
+                        {
+                            photino.HandleFilesDropped(wParam);
+                        }
+                    }
+                    finally
+                    {
+                        WinApi.DragFinish(wParam);
+                    }
+
+                    return 0;
+                }
             case WinConstants.WM_ACTIVATE:
                 {
                     if (HWNDToPhotino.TryGetValue(hwnd, out var photino))
@@ -464,6 +484,21 @@ public class WinPhotinoEx : PhotinoEx
                 }
             case WinConstants.WM_DESTROY:
                 {
+                    if (HWNDToPhotino.TryGetValue(hwnd, out var photino))
+                    {
+                        foreach (var dropTargetWindow in photino._dropTargetWindows)
+                        {
+                            WinApi.RevokeDragDrop(dropTargetWindow);
+                        }
+                        photino._dropTargetWindows.Clear();
+                        photino._dropTarget = null;
+                        if (photino._oleInitialized)
+                        {
+                            WinApi.OleUninitialize();
+                            photino._oleInitialized = false;
+                        }
+                    }
+
                     HWNDToPhotino.Remove(hwnd);
                     if (hwnd == messageLoopRootWindowHandle)
                     {
@@ -578,6 +613,25 @@ public class WinPhotinoEx : PhotinoEx
         }
 
         return WinApi.DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+
+    private void HandleFilesDropped(IntPtr drop)
+    {
+        var fileCount = WinApi.DragQueryFile(drop, uint.MaxValue, null, 0);
+        var paths = new string[fileCount];
+
+        for (uint index = 0; index < fileCount; index++)
+        {
+            var pathLength = WinApi.DragQueryFile(drop, index, null, 0);
+            var path = new StringBuilder(checked((int) pathLength + 1));
+            WinApi.DragQueryFile(drop, index, path, (uint) path.Capacity);
+            paths[index] = path.ToString();
+        }
+
+        WinApi.DragQueryPoint(drop, out var point);
+        InvokeFilesDropped(
+            new FilesDroppedEventArgs(paths, FileDragDropEffects.Copy, point.X, point.Y)
+        );
     }
 
     private uint RGB(byte r, byte g, byte b)
@@ -716,6 +770,41 @@ public class WinPhotinoEx : PhotinoEx
         options.AdditionalBrowserArguments = sb.ToString();
         WebViewEnvironment = await CoreWebView2Environment.CreateAsync(runtimePath, _temporaryFilesPath, options);
         WebViewController = await WebViewEnvironment.CreateCoreWebView2ControllerAsync(_hwnd);
+        // Let the native host handle files dropped from Explorer. If WebView2 accepts
+        // external drops, it treats assemblies as page content and downloads them.
+        WebViewController.AllowExternalDrop = false;
+        var oleInitializeResult = WinApi.OleInitialize(IntPtr.Zero);
+        if (oleInitializeResult < 0)
+        {
+            Marshal.ThrowExceptionForHR(oleInitializeResult);
+        }
+        _oleInitialized = true;
+        _dropTarget = new WinDropTarget(_hwnd, args => _filesDroppedCallback?.Invoke(args));
+        try
+        {
+            RegisterDropTarget(_hwnd, replaceExisting: false);
+            WinApi.EnumChildWindows(
+                _hwnd,
+                (child, _) =>
+                {
+                    RegisterDropTarget(child, replaceExisting: true);
+                    return true;
+                },
+                IntPtr.Zero
+            );
+        }
+        catch
+        {
+            foreach (var dropTargetWindow in _dropTargetWindows)
+            {
+                WinApi.RevokeDragDrop(dropTargetWindow);
+            }
+            _dropTargetWindows.Clear();
+            _dropTarget = null;
+            WinApi.OleUninitialize();
+            _oleInitialized = false;
+            throw;
+        }
         WebViewWindow = WebViewController.CoreWebView2;
 
         var settings = WebViewWindow.Settings;
@@ -805,6 +894,22 @@ public class WinPhotinoEx : PhotinoEx
 
         RefitContent();
         FocusWebView2();
+    }
+
+    private void RegisterDropTarget(IntPtr window, bool replaceExisting)
+    {
+        if (replaceExisting)
+        {
+            WinApi.RevokeDragDrop(window);
+        }
+
+        var result = WinApi.RegisterDragDrop(window, _dropTarget!);
+        if (result < 0)
+        {
+            Marshal.ThrowExceptionForHR(result);
+        }
+
+        _dropTargetWindows.Add(window);
     }
 
     public void Show(bool isAlreadyShown)

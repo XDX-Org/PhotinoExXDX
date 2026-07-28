@@ -1,5 +1,7 @@
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Text;
 using PhotinoEx.Core.Models;
 using PhotinoEx.Core.Platform.Windows.FileDragDrop;
 
@@ -7,6 +9,14 @@ namespace PhotinoEx.Core.Platform.Windows.Utils;
 
 internal static class WinApi
 {
+    public delegate bool EnumWindowsDelegate(IntPtr hwnd, IntPtr parameter);
+
+    [DllImport("ole32.dll")]
+    public static extern int OleInitialize(IntPtr reserved);
+
+    [DllImport("ole32.dll")]
+    public static extern void OleUninitialize();
+
     [DllImport("ole32.dll")]
     public static extern int DoDragDrop(
         [MarshalAs(UnmanagedType.Interface)] IDataObject dataObject,
@@ -14,6 +24,15 @@ internal static class WinApi
         uint allowedEffects,
         out uint performedEffect
     );
+
+    [DllImport("ole32.dll")]
+    public static extern int RegisterDragDrop(IntPtr hwnd, IWinDropTarget dropTarget);
+
+    [DllImport("ole32.dll")]
+    public static extern int RevokeDragDrop(IntPtr hwnd);
+
+    [DllImport("ole32.dll")]
+    public static extern void ReleaseStgMedium(ref STGMEDIUM medium);
 
     #region GDI
 
@@ -116,6 +135,12 @@ internal static class WinApi
     public static extern bool GetClientRect(IntPtr hWnd, out Rect lpRect);
 
     [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool EnumChildWindows(IntPtr parent, EnumWindowsDelegate callback, IntPtr parameter);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool ScreenToClient(IntPtr hwnd, ref Point point);
+
+    [DllImport("user32.dll", SetLastError = true)]
     public static extern bool DestroyWindow(IntPtr hWnd);
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -175,6 +200,19 @@ internal static class WinApi
     #endregion
 
     #region Shell
+
+    [DllImport("shell32.dll")]
+    public static extern void DragAcceptFiles(IntPtr hwnd, [MarshalAs(UnmanagedType.Bool)] bool accept);
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    public static extern uint DragQueryFile(IntPtr drop, uint fileIndex, StringBuilder? fileName, uint characterCount);
+
+    [DllImport("shell32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool DragQueryPoint(IntPtr drop, out Point point);
+
+    [DllImport("shell32.dll")]
+    public static extern void DragFinish(IntPtr drop);
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     public static extern int SHCreateItemFromParsingName(string pszPath, IntPtr pbc, [In] ref Guid riid, out IShellItem ppv);
