@@ -13,6 +13,7 @@
     <PackageReference Include="GirCore.WebKit-6.0" Version="0.7.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView" Version="10.0.3" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3800.47" PrivateAssets="build;buildTransitive" />
+    <PackageReference Include="Photino.NET" Version="4.0.16" />
     <PackageReference Include="Tmds.DBus" Version="0.94.2" />
   </ItemGroup>
 

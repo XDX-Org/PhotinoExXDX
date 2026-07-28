@@ -57,6 +57,7 @@ public abstract class PhotinoEx
     public int MaxHeight { get; set; }
 
     [UnsupportedOSPlatform("linux")]
+    [UnsupportedOSPlatform("macos")]
     public abstract void ClearBrowserAutoFill();
 
     public abstract void SetClipboardText(string text);

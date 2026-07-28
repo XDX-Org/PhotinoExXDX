@@ -2589,6 +2589,7 @@ public class PhotinoExWindow
     /// Returns the current <see cref="PhotinoExWindow"/> instance.
     /// </returns>
     [UnsupportedOSPlatform("linux")]
+    [UnsupportedOSPlatform("macos")]
     public PhotinoExWindow ClearBrowserAutoFill()
     {
         if (IsWindowsPlatform)
