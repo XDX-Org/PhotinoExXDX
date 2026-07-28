@@ -52,6 +52,8 @@ await Clipboard.CopyFilesAsync(
 
 See [Native Clipboard](docs/clipboard.md) for implementation status, platform formats, and Core API usage.
 
+Planned work is tracked in the phased [implementation roadmap](docs/roadmap.md).
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first
