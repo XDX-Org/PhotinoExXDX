@@ -23,6 +23,7 @@ public class WinPhotinoEx : PhotinoEx
     private const uint CfUnicodeText = 13;
     private const uint CfHDrop = 15;
     private const uint GmemMoveable = 0x0002;
+    private readonly WinApi.WndProcDelegate _windowProc;
     private IntPtr _hInstance { get; set; }
     private IntPtr _hwnd { get; set; }
     public CoreWebView2Environment? WebViewEnvironment { get; private set; }
@@ -40,6 +41,7 @@ public class WinPhotinoEx : PhotinoEx
 
     public WinPhotinoEx(PhotinoExInitParams exInitParams)
     {
+        _windowProc = WindowProc;
         darkBrush = WinApi.CreateSolidBrush(RGB(0, 0, 0));
         lightBrush = WinApi.CreateSolidBrush(RGB(255, 255, 255));
 
@@ -374,7 +376,7 @@ public class WinPhotinoEx : PhotinoEx
         {
             cbSize = (uint) Marshal.SizeOf(typeof(WndClassEx)),
             style = WinConstants.CS_HREDRAW | WinConstants.CS_VREDRAW,
-            lpfnWndProc = Marshal.GetFunctionPointerForDelegate(new WinApi.WndProcDelegate(WindowProc)),
+            lpfnWndProc = Marshal.GetFunctionPointerForDelegate(_windowProc),
             cbClsExtra = 0,
             cbWndExtra = 0,
             hInstance = _hInstance,
@@ -1316,6 +1318,8 @@ public class WinPhotinoEx : PhotinoEx
             WinApi.TranslateMessage(ref msg);
             WinApi.DispatchMessage(ref msg);
         }
+
+        GC.KeepAlive(_windowProc);
     }
 
     public override void AddCustomSchemeName(string scheme)
