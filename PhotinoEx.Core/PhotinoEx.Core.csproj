@@ -6,9 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>PhotinoXDX.Core</PackageId>
+    <Title>PhotinoEx Core</Title>
+    <Description>Cross-platform native desktop windows and webviews for .NET.</Description>
+    <PackageTags>desktop;webview;photino;windows;linux;macos</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
     <PackageReference Include="GirCore.Gtk-4.0" Version="0.7.0" />
     <PackageReference Include="GirCore.WebKit-6.0" Version="0.7.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView" Version="10.0.3" />
