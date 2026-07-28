@@ -1,4 +1,5 @@
 @page "/"
+@using PhotinoEx.Core
 @using PhotinoEx.Core.Models
 
 <h3>Home</h3>
@@ -105,7 +106,39 @@
 
     private async Task CallTray()
     {
-        Console.WriteLine($"Calling tray test method");
-        await Program.App!.MainWindow.ActivateTrayAndIcon();
+        var window = Program.App!.MainWindow;
+        if (window.Tray.TryGet("main", out _))
+        {
+            return;
+        }
+
+        var iconPath = PhotinoExWindow.IsWindowsPlatform
+            ? Path.Combine(AppContext.BaseDirectory, "wwwroot", "Icon_PhotinoEx.ico")
+            : Path.Combine(AppContext.BaseDirectory, "wwwroot", "hicolor", "48x48", "apps", "Icon_PhotinoEx.png");
+        var menu = new TrayMenu
+        {
+            Items =
+            [
+                new TrayMenuCommand("restore", "Restore", _ =>
+                {
+                    window.SetMinimized(false);
+                    return Task.CompletedTask;
+                }),
+                new TrayMenuSeparator("separator"),
+                new TrayMenuCommand("exit", "Exit", _ =>
+                {
+                    window.Close();
+                    return Task.CompletedTask;
+                }),
+            ],
+        };
+        var icon = await window.Tray.RegisterAsync(new TrayIconOptions("main", iconPath, "PhotinoEx", menu));
+        icon.Clicked += (_, args) =>
+        {
+            if (args.Button == TrayMouseButton.Primary)
+            {
+                window.SetMinimized(false);
+            }
+        };
     }
 }

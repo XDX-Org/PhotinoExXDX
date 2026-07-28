@@ -17,7 +17,7 @@ The implementation must use the operating system's notification-area APIs. The m
 
 The repository already has `IPhotinoExTray`, `IPhotinoExTrayIcon`, `LinPhotinoExTray`, and `LinPhotinoExTrayIcon`. The Linux tray is attached when `LinPhotinoEx` creates its GTK application, but its icon methods currently only update managed fields. It does not register a StatusNotifierItem, publish a menu, or emit click events. Windows and macOS have no tray implementations.
 
-`PhotinoExWindow.ActivateTrayAndIcon()` currently creates one hard-coded Linux-style icon ID and does not expose the resulting icon. It should be replaced by the registration API below.
+The former hard-coded `PhotinoExWindow.ActivateTrayAndIcon()` helper has been removed in favor of the registration API below.
 
 ## Public API
 
