@@ -59,6 +59,38 @@ public sealed class TrayTests : IDisposable
     }
 
     [Fact]
+    public async Task NullAndBlankIconPathsAreRejected()
+    {
+        var tray = new FakeTray();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => tray.RegisterAsync(null!));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            tray.RegisterAsync(new TrayIconOptions("main", " "))
+        );
+    }
+
+    [Fact]
+    public async Task UnregisteringUnknownIdReturnsFalse()
+    {
+        var tray = new FakeTray();
+
+        Assert.False(await tray.UnregisterAsync("unknown"));
+    }
+
+    [Fact]
+    public void UnhandledExceptionIsForwardedToSubscribers()
+    {
+        var tray = new FakeTray();
+        var expected = new InvalidOperationException("failure");
+        Exception? reported = null;
+        tray.UnhandledException += (_, exception) => reported = exception;
+
+        tray.ReportUnhandledException(expected);
+
+        Assert.Same(expected, reported);
+    }
+
+    [Fact]
     public async Task DuplicateNestedMenuIdIsRejected()
     {
         var menu = new TrayMenu
@@ -69,6 +101,33 @@ public sealed class TrayTests : IDisposable
                 new TraySubmenu("submenu", "More", [new TrayMenuSeparator("same")]),
             ],
         };
+
+        var tray = new FakeTray();
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu))
+        );
+    }
+
+    [Theory]
+    [InlineData("", "Command")]
+    [InlineData("command", "")]
+    public async Task BlankCommandFieldsAreRejected(string id, string text)
+    {
+        var menu = new TrayMenu
+        {
+            Items = [new TrayMenuCommand(id, text, _ => Task.CompletedTask)],
+        };
+
+        var tray = new FakeTray();
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu))
+        );
+    }
+
+    [Fact]
+    public async Task BlankSubmenuTextIsRejected()
+    {
+        var menu = new TrayMenu { Items = [new TraySubmenu("more", " ", [])] };
 
         var tray = new FakeTray();
         await Assert.ThrowsAsync<ArgumentException>(() =>

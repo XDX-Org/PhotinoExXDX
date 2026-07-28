@@ -880,6 +880,9 @@ public class PhotinoExWindow
                 {
                     Invoke(() => ((WinPhotinoEx)_instance).SetMaxSize(new Size(value.X, value.Y)));
                 }
+
+                _maxWidth = value.X;
+                _maxHeight = value.Y;
             }
         }
     }
@@ -967,6 +970,9 @@ public class PhotinoExWindow
                 {
                     Invoke(() => ((WinPhotinoEx)_instance).SetMinSize(new Size(value.X, value.Y)));
                 }
+
+                _minWidth = value.X;
+                _minHeight = value.Y;
             }
         }
     }
