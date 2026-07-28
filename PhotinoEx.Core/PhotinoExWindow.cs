@@ -805,7 +805,7 @@ public class PhotinoExWindow
                 }
                 else
                 {
-                    Invoke(() => _instance.SetPosition(Location));
+                    Invoke(() => _instance.SetPosition(value));
                 }
             }
         }
