@@ -8,10 +8,10 @@
 | 2 | Linux clipboard compatibility | Pending |
 | 3 | Clipboard read support | Pending |
 | 4 | Clipboard hardening | Pending |
-| 5 | Cross-platform CI | Pending |
+| 5 | Cross-platform CI | In progress |
 | 6 | Tray completion | Pending |
-| 7 | macOS window backend | Pending |
-| 8 | Warning reduction and release readiness | Pending |
+| 7 | macOS window backend | In progress |
+| 8 | Warning reduction and release readiness | In progress |
 
 ## Phase 1: Clipboard integration tests
 
@@ -72,11 +72,11 @@ Completion requires deterministic cleanup, actionable exceptions, and tests for 
 
 Build and test the repository continuously on its supported operating systems.
 
-- [ ] Add Windows, Ubuntu, and macOS build jobs.
+- [x] Add Windows, Ubuntu, and macOS build jobs.
 - [ ] Run unit tests and collect coverage on every job.
 - [ ] Publish test and coverage artifacts.
 - [ ] Add optional GUI smoke-test jobs where desktop sessions are available.
-- [ ] Keep environment-dependent tests clearly separated from required headless checks.
+- [x] Keep environment-dependent tests clearly separated from required headless checks.
 
 Completion requires required build/unit-test jobs on all three operating systems and documented optional GUI jobs.
 
@@ -96,10 +96,10 @@ Completion requires reliable Windows/Linux lifecycle recovery and tests for nati
 
 Replace the current stub with a usable native window and webview host.
 
-- [ ] Select and document the AppKit/WebKit binding approach.
-- [ ] Implement application and window lifecycle.
-- [ ] Embed and configure `WKWebView`.
-- [ ] Implement navigation, messaging, custom schemes, dialogs, and dispatch.
+- [x] Select and document the AppKit/WebKit binding approach.
+- [x] Implement application and window lifecycle.
+- [x] Embed and configure `WKWebView`.
+- [x] Implement navigation, messaging, custom schemes, dialogs, and dispatch.
 - [ ] Integrate existing clipboard operations and verify them on macOS.
 - [ ] Add tray support and platform smoke tests.
 
@@ -109,11 +109,11 @@ Completion requires the sample application to start, render Blazor UI, exchange 
 
 Resolve actionable warnings and establish a clean packaging baseline.
 
-- [ ] Fix nullable warnings in dialogs, WebView initialization, and Linux native object handling.
-- [ ] Resolve the `WindowsBase` assembly-version conflict.
-- [ ] Address analyzer warnings in tests and platform annotations.
+- [x] Fix nullable warnings in dialogs, WebView initialization, and Linux native object handling.
+- [x] Resolve the `WindowsBase` assembly-version conflict.
+- [x] Address analyzer warnings in tests and platform annotations.
 - [ ] Define which warnings fail CI.
-- [ ] Verify package metadata, licenses, symbols, and release builds.
-- [ ] Document supported platforms and known limitations.
+- [x] Verify package metadata, licenses, symbols, and release builds.
+- [x] Document supported platforms and known limitations.
 
 Completion requires clean release builds under the agreed warning policy and reproducible package output.
