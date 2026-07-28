@@ -13,7 +13,7 @@ public sealed class TrayTests : IDisposable
     public async Task RegisterGetAndUnregisterTracksIcon()
     {
         var tray = new FakeTray();
-        var icon = await tray.RegisterAsync(new TrayIconOptions("main", _iconPath));
+        var icon = await tray.RegisterAsync(new TrayIconOptions("main", _iconPath), TestContext.Current.CancellationToken);
 
         Assert.True(tray.TryGet("main", out var registered));
         Assert.Same(icon, registered);
@@ -26,10 +26,10 @@ public sealed class TrayTests : IDisposable
     public async Task DuplicateIdIsRejected()
     {
         var tray = new FakeTray();
-        await tray.RegisterAsync(new TrayIconOptions("main", _iconPath));
+        await tray.RegisterAsync(new TrayIconOptions("main", _iconPath), TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            tray.RegisterAsync(new TrayIconOptions("main", _iconPath))
+            tray.RegisterAsync(new TrayIconOptions("main", _iconPath), TestContext.Current.CancellationToken)
         );
     }
 
@@ -37,10 +37,10 @@ public sealed class TrayTests : IDisposable
     public async Task IdCanBeReusedAfterUnregister()
     {
         var tray = new FakeTray();
-        await tray.RegisterAsync(new TrayIconOptions("main", _iconPath));
+        await tray.RegisterAsync(new TrayIconOptions("main", _iconPath), TestContext.Current.CancellationToken);
         await tray.UnregisterAsync("main");
 
-        var replacement = await tray.RegisterAsync(new TrayIconOptions("main", _iconPath));
+        var replacement = await tray.RegisterAsync(new TrayIconOptions("main", _iconPath), TestContext.Current.CancellationToken);
 
         Assert.Equal("main", replacement.Id);
     }
@@ -51,10 +51,10 @@ public sealed class TrayTests : IDisposable
         var tray = new FakeTray();
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            tray.RegisterAsync(new TrayIconOptions("", _iconPath))
+            tray.RegisterAsync(new TrayIconOptions("", _iconPath), TestContext.Current.CancellationToken)
         );
         await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            tray.RegisterAsync(new TrayIconOptions("main", _iconPath + ".missing"))
+            tray.RegisterAsync(new TrayIconOptions("main", _iconPath + ".missing"), TestContext.Current.CancellationToken)
         );
     }
 
@@ -63,9 +63,9 @@ public sealed class TrayTests : IDisposable
     {
         var tray = new FakeTray();
 
-        await Assert.ThrowsAsync<ArgumentNullException>(() => tray.RegisterAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => tray.RegisterAsync(null!, TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            tray.RegisterAsync(new TrayIconOptions("main", " "))
+            tray.RegisterAsync(new TrayIconOptions("main", " "), TestContext.Current.CancellationToken)
         );
     }
 
@@ -104,7 +104,7 @@ public sealed class TrayTests : IDisposable
 
         var tray = new FakeTray();
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu))
+            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu), TestContext.Current.CancellationToken)
         );
     }
 
@@ -120,7 +120,7 @@ public sealed class TrayTests : IDisposable
 
         var tray = new FakeTray();
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu))
+            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu), TestContext.Current.CancellationToken)
         );
     }
 
@@ -131,7 +131,7 @@ public sealed class TrayTests : IDisposable
 
         var tray = new FakeTray();
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu))
+            tray.RegisterAsync(new TrayIconOptions("main", _iconPath, Menu: menu), TestContext.Current.CancellationToken)
         );
     }
 
@@ -139,8 +139,8 @@ public sealed class TrayTests : IDisposable
     public async Task UnregisterAllDisposesEveryIcon()
     {
         var tray = new FakeTray();
-        var first = (FakeIcon)await tray.RegisterAsync(new TrayIconOptions("first", _iconPath));
-        var second = (FakeIcon)await tray.RegisterAsync(new TrayIconOptions("second", _iconPath));
+        var first = (FakeIcon)await tray.RegisterAsync(new TrayIconOptions("first", _iconPath), TestContext.Current.CancellationToken);
+        var second = (FakeIcon)await tray.RegisterAsync(new TrayIconOptions("second", _iconPath), TestContext.Current.CancellationToken);
 
         await tray.UnregisterAllAsync();
 
@@ -195,8 +195,8 @@ public sealed class TrayTests : IDisposable
         public string Id { get; } = options.Id;
         public bool IsVisible { get; private set; } = options.IsVisible;
         public bool IsDisposed { get; private set; }
-        public event EventHandler<TrayIconEventArgs>? Clicked;
-        public event EventHandler? MenuOpening;
+        public event EventHandler<TrayIconEventArgs>? Clicked { add { } remove { } }
+        public event EventHandler? MenuOpening { add { } remove { } }
         public Task SetIconAsync(string iconPath) => Task.CompletedTask;
         public Task SetToolTipAsync(string? toolTip) => Task.CompletedTask;
         public Task SetVisibleAsync(bool visible) { IsVisible = visible; return Task.CompletedTask; }

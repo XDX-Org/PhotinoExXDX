@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace PhotinoEx.Core.Platform.Windows.Tray;
 
+[SupportedOSPlatform("windows")]
 internal sealed class WinTrayNative : IDisposable
 {
     internal const uint CallbackMessage = WM_APP + 1;

@@ -371,16 +371,18 @@ public class LinPhotinoEx : PhotinoEx
             }
             catch (Exception ex)
             {
-                throw new Exception($"fucked up {ex}");
+                throw new InvalidOperationException($"Failed to set WebKit setting '{propertyName}'.", ex);
             }
         }
     }
 
     private void AddCustomSchemeHandlers()
     {
+        var webView = _webView ?? throw new InvalidOperationException("The webview is not initialized.");
+        var webContext = webView.WebContext ?? throw new InvalidOperationException("The webview context is not initialized.");
         foreach (var customSchemeName in _customSchemeNames)
         {
-            _webView!.WebContext.RegisterUriScheme(customSchemeName, HandleCustomSchemeRequest);
+            webContext.RegisterUriScheme(customSchemeName, HandleCustomSchemeRequest);
         }
     }
 
@@ -468,7 +470,8 @@ public class LinPhotinoEx : PhotinoEx
 
     public override bool GetDevToolsEnabled()
     {
-        _devToolsEnabled = _webView.GetSettings().GetEnableDeveloperExtras();
+        var webView = _webView ?? throw new InvalidOperationException("The webview is not initialized.");
+        _devToolsEnabled = webView.GetSettings().GetEnableDeveloperExtras();
         return _devToolsEnabled;
     }
 
@@ -548,7 +551,8 @@ public class LinPhotinoEx : PhotinoEx
 
     public override bool GetMinimized()
     {
-        var surface = (ToplevelHelper) _window!.GetSurface();
+        var surface = _window?.GetSurface() as ToplevelHelper
+            ?? throw new InvalidOperationException("The GTK window surface is not initialized.");
         var surfaceState = surface.GetState();
         return (surfaceState & ToplevelState.Suspended) != 0;
     }
@@ -680,8 +684,10 @@ public class LinPhotinoEx : PhotinoEx
         var file = new FileInfo(filename);
 
         // /home/cwx/Repos/PhotinoEx/PhotinoEx.Test/wwwroot
-        var pathToSearch = file.DirectoryName.Replace("/hicolor/48x48/apps", "");
-        var theme = IconTheme.GetForDisplay(_window.GetDisplay());
+        var directory = file.DirectoryName ?? throw new ArgumentException("The icon path must include a directory.", nameof(filename));
+        var display = _window?.GetDisplay() ?? throw new InvalidOperationException("The GTK window is not initialized.");
+        var pathToSearch = directory.Replace("/hicolor/48x48/apps", "");
+        var theme = IconTheme.GetForDisplay(display);
         theme.AddSearchPath(pathToSearch);
         // Icon_PhotinoEx
         _window?.SetIconName(file.Name.Replace(file.Extension, ""));

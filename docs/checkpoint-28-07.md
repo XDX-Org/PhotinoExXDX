@@ -14,13 +14,13 @@
 4. **Done — Windows dialogs leak COM shell items.**
    `PhotinoEx.Core/Platform/Windows/Dialog/WinPhotinoExDialog.cs:50,101,174,192` creates `IShellItem` objects without releasing them. Only the dialogs are released.
 
-5. **Medium — The solution builds with 78 warnings.**
+5. **Done — The solution builds with 78 warnings.**
    The main issues are nullable-contract warnings throughout `PhotinoEx.Blazor` and a `WindowsBase` 4.0/5.0 conflict caused by WebView2's WPF assembly entering the cross-platform `net10.0` project.
 
 6. **Low — Linux feature exceptions are misleading.**
    `PhotinoEx.Core/Platform/Linux/LinPhotinoEx.cs:505,512,604,745` says Linux is unsupported when only window positioning or topmost behavior is unsupported. These should be `PlatformNotSupportedException` messages describing the feature limitation.
 
-7. **Low — A production exception is unprofessional and loses exception structure.**
+7. **Done — A production exception is unprofessional and loses exception structure.**
    `PhotinoEx.Core/Platform/Linux/LinPhotinoEx.cs:373` should let the original exception propagate or wrap it with a useful message and the original exception as its inner exception.
 
 8. **Low — Windows dialog methods are falsely asynchronous.**

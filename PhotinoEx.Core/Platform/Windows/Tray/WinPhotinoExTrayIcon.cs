@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using PhotinoEx.Core.Models;
 
 namespace PhotinoEx.Core.Platform.Windows.Tray;
 
+[SupportedOSPlatform("windows")]
 internal sealed class WinPhotinoExTrayIcon : IPhotinoExTrayIcon
 {
     private const uint NIM_ADD = 0;

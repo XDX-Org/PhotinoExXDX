@@ -768,7 +768,7 @@ public class PhotinoExWindow
                 }
                 else
                 {
-                    Invoke(() => _instance.SetIconFile(_iconFile));
+                    Invoke(() => _instance.SetIconFile(_iconFile!));
                 }
             }
         }
@@ -790,7 +790,9 @@ public class PhotinoExWindow
 
             Point position = default;
 
+#pragma warning disable CA1416
             Invoke(() => position = _instance.GetPosition());
+#pragma warning restore CA1416
 
             return position;
         }
@@ -805,7 +807,9 @@ public class PhotinoExWindow
                 }
                 else
                 {
+#pragma warning disable CA1416
                     Invoke(() => _instance.SetPosition(value));
+#pragma warning restore CA1416
                 }
             }
         }

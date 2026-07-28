@@ -1,7 +1,9 @@
 using PhotinoEx.Core.Models;
+using System.Runtime.Versioning;
 
 namespace PhotinoEx.Core.Platform.Windows.Tray;
 
+[SupportedOSPlatform("windows")]
 internal sealed class WinPhotinoExTray : PhotinoExTrayBase, IDisposable
 {
     private readonly WinTrayNative _native = new();

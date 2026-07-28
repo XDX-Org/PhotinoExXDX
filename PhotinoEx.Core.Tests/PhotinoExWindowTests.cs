@@ -1,10 +1,12 @@
 using System.Drawing;
+using System.Runtime.Versioning;
 using PhotinoEx.Core;
 using PhotinoEx.Blazor;
 using Xunit;
 
 namespace PhotinoEx.Core.Tests;
 
+[SupportedOSPlatform("windows")]
 public sealed class PhotinoExWindowTests
 {
     [Theory]
@@ -280,7 +282,7 @@ public sealed class PhotinoExWindowTests
         Assert.Same(window, window.RegisterCustomSchemeHandler("scheme0", HandleScheme));
     }
 
-    private static Stream HandleScheme(object sender, string scheme, string url, out string contentType)
+    private static Stream HandleScheme(object? sender, string? scheme, string url, out string contentType)
     {
         contentType = "text/plain";
         return new MemoryStream(System.Text.Encoding.UTF8.GetBytes(url));

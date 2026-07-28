@@ -60,7 +60,7 @@ public sealed class NativeClipboardSmokeTests
             {
                 try
                 {
-                    Task<string>? read = null;
+                    Task<string?>? read = null;
                     window.Invoke(() => read = GetClipboard().ReadTextAsync());
                     return await read! ?? string.Empty;
                 }

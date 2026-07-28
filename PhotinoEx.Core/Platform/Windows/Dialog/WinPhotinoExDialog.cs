@@ -1,9 +1,11 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using PhotinoEx.Core.Models;
 using PhotinoEx.Core.Platform.Windows.Utils;
 
 namespace PhotinoEx.Core.Platform.Windows.Dialog;
 
+[SupportedOSPlatform("windows")]
 public class WinPhotinoExDialog : IPhotinoExDialog
 {
     private IntPtr _hwnd { get; set; }
@@ -15,12 +17,12 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
     public async Task<List<string>> ShowOpenFileAsync(string title, string? path, bool multiSelect, List<FileFilter>? filterPatterns)
     {
-        var dialog = (IFileOpenDialog) Activator.CreateInstance(Type.GetTypeFromCLSID(WinConstants.CLSID_FileOpenDialog));
+        var dialog = CreateDialog<IFileOpenDialog>(WinConstants.CLSID_FileOpenDialog);
         var result = new List<string>();
 
         try
         {
-            dialog!.GetOptions(out uint options);
+            dialog.GetOptions(out uint options);
             options |= WinConstants.FOS_FILEMUSTEXIST | WinConstants.FOS_FORCEFILESYSTEM | WinConstants.FOS_PATHMUSTEXIST;
             if (multiSelect)
             {
@@ -76,12 +78,12 @@ public class WinPhotinoExDialog : IPhotinoExDialog
 
     public async Task<List<string>> ShowOpenFolderAsync(string title, string? path, bool multiSelect)
     {
-        var dialog = (IFileOpenDialog) Activator.CreateInstance(Type.GetTypeFromCLSID(WinConstants.CLSID_FileOpenDialog));
+        var dialog = CreateDialog<IFileOpenDialog>(WinConstants.CLSID_FileOpenDialog);
         var result = new List<string>();
 
         try
         {
-            dialog!.GetOptions(out uint options);
+            dialog.GetOptions(out uint options);
             options |= WinConstants.FOS_PICKFOLDERS | WinConstants.FOS_FORCEFILESYSTEM | WinConstants.FOS_PATHMUSTEXIST;
             if (multiSelect)
             {
@@ -124,11 +126,11 @@ public class WinPhotinoExDialog : IPhotinoExDialog
     public async Task<string> ShowSaveFileAsync(string title, string? path, List<FileFilter>? filterPatterns, string defaultExtension = "txt",
         string defaultFileName = "PhotinoExFile")
     {
-        var dialog = (IFileSaveDialog) Activator.CreateInstance(Type.GetTypeFromCLSID(WinConstants.CLSID_FileSaveDialog));
+        var dialog = CreateDialog<IFileSaveDialog>(WinConstants.CLSID_FileSaveDialog);
 
         try
         {
-            dialog!.GetOptions(out uint options);
+            dialog.GetOptions(out uint options);
             options |= WinConstants.FOS_FORCEFILESYSTEM | WinConstants.FOS_PATHMUSTEXIST | WinConstants.FOS_OVERWRITEPROMPT;
             dialog.SetOptions(options);
 
@@ -323,5 +325,13 @@ public class WinPhotinoExDialog : IPhotinoExDialog
         {
             Marshal.ReleaseComObject(folder);
         }
+    }
+
+    private static T CreateDialog<T>(Guid classId) where T : class
+    {
+        var type = Type.GetTypeFromCLSID(classId)
+            ?? throw new InvalidOperationException($"COM class '{classId}' is unavailable.");
+        return Activator.CreateInstance(type) as T
+            ?? throw new InvalidOperationException($"Could not create COM class '{classId}'.");
     }
 }
