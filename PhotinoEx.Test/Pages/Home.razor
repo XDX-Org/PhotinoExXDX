@@ -1,4 +1,5 @@
 @page "/"
+@using PhotinoEx.Core
 @using PhotinoEx.Core.Models
 
 <h3>Home</h3>
@@ -14,8 +15,11 @@
 <button @onclick="CheckDevTools">Check Dev Tools</button>
 <button @onclick="TopMost">Check Top Most</button>
 <button @onclick="CallTray">Call Tray Test</button>
+<button @onclick="ToggleBrowserMenuItem">Browser tray item: @_showBrowserMenuItem</button>
 
 @code {
+    private bool _showBrowserMenuItem;
+
 
     private async Task OpenFile()
     {
@@ -105,7 +109,57 @@
 
     private async Task CallTray()
     {
-        Console.WriteLine($"Calling tray test method");
-        await Program.App!.MainWindow.ActivateTrayAndIcon();
+        var window = Program.App!.MainWindow;
+        if (window.Tray.TryGet("main", out _))
+        {
+            return;
+        }
+
+        var iconPath = PhotinoExWindow.IsWindowsPlatform
+            ? Path.Combine(AppContext.BaseDirectory, "wwwroot", "Icon_PhotinoEx.ico")
+            : Path.Combine(AppContext.BaseDirectory, "wwwroot", "hicolor", "48x48", "apps", "Icon_PhotinoEx.png");
+        var menu = new TrayMenu
+        {
+            Items =
+            [
+                new TrayMenuCommand("restore", "Restore", _ =>
+                {
+                    window.SetMinimized(false);
+                    return Task.CompletedTask;
+                }),
+                new TrayMenuCommand(
+                    "browser",
+                    "Open browser",
+                    _ =>
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "https://github.com/XDX-Org/PhotinoExXDX",
+                            UseShellExecute = true,
+                        });
+                        return Task.CompletedTask;
+                    },
+                    GetState: _ => ValueTask.FromResult(
+                        new TrayMenuItemState(IsVisible: _showBrowserMenuItem)
+                    )
+                ),
+                new TrayMenuSeparator("separator"),
+                new TrayMenuCommand("exit", "Exit", _ =>
+                {
+                    window.Close();
+                    return Task.CompletedTask;
+                }),
+            ],
+        };
+        var icon = await window.Tray.RegisterAsync(new TrayIconOptions("main", iconPath, "PhotinoEx", menu));
+        icon.Clicked += (_, args) =>
+        {
+            if (args.Button == TrayMouseButton.Primary)
+            {
+                window.SetMinimized(false);
+            }
+        };
     }
+
+    private void ToggleBrowserMenuItem() => _showBrowserMenuItem = !_showBrowserMenuItem;
 }

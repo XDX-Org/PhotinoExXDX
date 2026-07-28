@@ -101,6 +101,7 @@ public class LinPhotinoEx : PhotinoEx
 
         _parent = _params.ParentInstance;
         _application = Application.New($"com.photinoex.App", ApplicationFlags.FlagsNone);
+        Tray = new LinPhotinoExTray();
         WebKit.Module.Initialize();
 
         _cssProvider = CssProvider.New();
@@ -162,8 +163,6 @@ public class LinPhotinoEx : PhotinoEx
         _window = ApplicationWindow.New((Application) sender);
         _window!.SetChild(_webView);
         Dialog = new LinuxPhotinoExDialog(_window);
-        Tray = new LinPhotinoExTray(_application.GetDbusConnection()!);
-
         if (_params.FullScreen)
         {
             _window.Fullscreen();

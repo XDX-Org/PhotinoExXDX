@@ -7,6 +7,7 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 using PhotinoEx.Core.Models;
 using PhotinoEx.Core.Platform.Windows.Dialog;
+using PhotinoEx.Core.Platform.Windows.Tray;
 using PhotinoEx.Core.Platform.Windows.Utils;
 using Monitor = PhotinoEx.Core.Models.Monitor;
 using Size = System.Drawing.Size;
@@ -90,6 +91,7 @@ public class WinPhotinoEx : PhotinoEx
         }
 
         _parent = _params.ParentInstance;
+        Tray = new WinPhotinoExTray();
 
         if (_params.UseOsDefaultSize)
         {
