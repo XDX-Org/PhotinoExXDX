@@ -56,6 +56,10 @@ public abstract class PhotinoEx
 
     public abstract void ClearBrowserAutoFill();
 
+    public abstract void SetClipboardText(string text);
+
+    public abstract void SetClipboardFiles(IReadOnlyList<string> paths);
+
     public abstract void Close();
 
     public abstract bool GetTransparentEnabled();

@@ -52,6 +52,7 @@ public static class PhotinoExServiceCollectionExtensions
             })
             .AddSingleton<JSComponentConfigurationStore>()
             .AddSingleton<PhotinoExBlazorApp>()
+            .AddScoped<IPhotinoExClipboard, PhotinoExClipboard>()
             .AddSingleton<PhotinoExHttpHandler>()
             .AddSingleton<PhotinoExSynchronizationContext>()
             .AddSingleton<PhotinoExWebViewManager>()

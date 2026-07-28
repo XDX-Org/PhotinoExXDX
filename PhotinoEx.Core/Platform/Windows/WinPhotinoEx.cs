@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -18,6 +19,9 @@ namespace PhotinoEx.Core.Platform.Windows;
 [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
 public class WinPhotinoEx : PhotinoEx
 {
+    private const uint CfUnicodeText = 13;
+    private const uint CfHDrop = 15;
+    private const uint GmemMoveable = 0x0002;
     private IntPtr _hInstance { get; set; }
     private IntPtr _hwnd { get; set; }
     public CoreWebView2Environment? WebViewEnvironment { get; private set; }
@@ -227,6 +231,100 @@ public class WinPhotinoEx : PhotinoEx
         // }
 
         Show(_params.Minimized || _params.Maximized);
+    }
+
+    public override void SetClipboardText(string text)
+    {
+        var bytes = Encoding.Unicode.GetBytes(text + '\0');
+        SetClipboardData(CfUnicodeText, bytes);
+    }
+
+    public override void SetClipboardFiles(IReadOnlyList<string> paths)
+    {
+        var bytes = Encoding.Unicode.GetBytes(string.Join('\0', paths) + "\0\0");
+        SetClipboardData(CfHDrop, bytes, 20, header =>
+        {
+            Marshal.WriteInt32(header, 0, 20);
+            Marshal.WriteInt32(header, 4, 0);
+            Marshal.WriteInt32(header, 8, 0);
+            Marshal.WriteInt32(header, 12, 0);
+            Marshal.WriteInt32(header, 16, 1);
+        });
+    }
+
+    private void SetClipboardData(
+        uint format,
+        byte[] bytes,
+        int headerSize = 0,
+        Action<IntPtr>? initializeHeader = null
+    )
+    {
+        var memory = WinApi.GlobalAlloc(GmemMoveable, (UIntPtr)(headerSize + bytes.Length));
+        if (memory == IntPtr.Zero)
+        {
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+
+        var transferred = false;
+        try
+        {
+            var target = WinApi.GlobalLock(memory);
+            if (target == IntPtr.Zero)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+
+            try
+            {
+                initializeHeader?.Invoke(target);
+                Marshal.Copy(bytes, 0, target + headerSize, bytes.Length);
+            }
+            finally
+            {
+                WinApi.GlobalUnlock(memory);
+            }
+
+            if (!TryOpenClipboard())
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+
+            try
+            {
+                if (!WinApi.EmptyClipboard() || WinApi.SetClipboardData(format, memory) == IntPtr.Zero)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                }
+
+                transferred = true;
+            }
+            finally
+            {
+                WinApi.CloseClipboard();
+            }
+        }
+        finally
+        {
+            if (!transferred)
+            {
+                WinApi.GlobalFree(memory);
+            }
+        }
+    }
+
+    private bool TryOpenClipboard()
+    {
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            if (WinApi.OpenClipboard(_hwnd))
+            {
+                return true;
+            }
+
+            Thread.Sleep(10);
+        }
+
+        return false;
     }
 
     private void SetBackdropTheme()

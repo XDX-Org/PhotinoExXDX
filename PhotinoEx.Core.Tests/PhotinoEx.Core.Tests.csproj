@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PhotinoEx.Blazor\PhotinoEx.Blazor.csproj" />
     <ProjectReference Include="..\PhotinoEx.Core\PhotinoEx.Core.csproj" />
   </ItemGroup>
 </Project>

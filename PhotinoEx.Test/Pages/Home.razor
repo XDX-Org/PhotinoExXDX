@@ -1,10 +1,13 @@
 @page "/"
 @using PhotinoEx.Core
 @using PhotinoEx.Core.Models
+@using PhotinoEx.Blazor
+@inject IPhotinoExClipboard Clipboard
 
 <h3>Home</h3>
 <button @onclick="OpenFile">OpenFile</button>
 <button @onclick="OpenFiles">OpenFiles</button>
+<button @onclick="SelectAndCopyFiles">Select and copy files</button>
 <button @onclick="OpenFolders">OpenFolders</button>
 <button @onclick="OpenFolder">OpenFolder</button>
 <button @onclick="SaveFile">SaveFile</button>
@@ -16,9 +19,14 @@
 <button @onclick="TopMost">Check Top Most</button>
 <button @onclick="CallTray">Call Tray Test</button>
 <button @onclick="ToggleBrowserMenuItem">Browser tray item: @_showBrowserMenuItem</button>
+@if (_clipboardStatus is not null)
+{
+    <p>@_clipboardStatus</p>
+}
 
 @code {
     private bool _showBrowserMenuItem;
+    private string? _clipboardStatus;
 
 
     private async Task OpenFile()
@@ -29,6 +37,23 @@
     private async Task OpenFiles()
     {
         var result = await Program.App!.MainWindow.ShowOpenFileDialogAsync(multiSelect: true);
+    }
+
+    private async Task SelectAndCopyFiles()
+    {
+        var files = await Program.App!.MainWindow.ShowOpenFileDialogAsync(
+            title: "Choose files to copy",
+            multiSelect: true
+        );
+
+        if (files is not { Count: > 0 })
+        {
+            _clipboardStatus = "No files selected.";
+            return;
+        }
+
+        await Clipboard.CopyFilesAsync(files);
+        _clipboardStatus = $"Copied {files.Count} file(s) to the clipboard.";
     }
 
     private async Task OpenFolders()

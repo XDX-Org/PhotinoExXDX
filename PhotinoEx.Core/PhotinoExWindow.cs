@@ -27,7 +27,7 @@ public class PhotinoExWindow
         MediaAutoplayEnabled = true,
         FileSystemAccessEnabled = true,
         WebSecurityEnabled = true,
-        JavascriptClipboardAccessEnabled = true,
+        JavascriptClipboardAccessEnabled = false,
         MediaStreamEnabled = true,
         SmoothScrollingEnabled = true,
         IgnoreCertificateErrorsEnabled = false,
@@ -1625,6 +1625,55 @@ public class PhotinoExWindow
             _instance!.Invoke(workItem);
         }
 
+        return this;
+    }
+
+    /// <summary>Copies text to the operating system clipboard.</summary>
+    /// <exception cref="InvalidOperationException">The window has not been initialized.</exception>
+    public PhotinoExWindow CopyTextToClipboard(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        if (_instance is null)
+        {
+            throw new InvalidOperationException("Clipboard access is unavailable before the window is initialized.");
+        }
+
+        Invoke(() => _instance.SetClipboardText(text));
+        return this;
+    }
+
+    /// <summary>Copies files or directories to the operating system clipboard.</summary>
+    /// <exception cref="InvalidOperationException">The window has not been initialized.</exception>
+    public PhotinoExWindow CopyFilesToClipboard(IEnumerable<string> paths)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        var normalizedPaths = paths.Select(path =>
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException("Clipboard paths cannot be blank.", nameof(paths));
+            }
+
+            var fullPath = Path.GetFullPath(path);
+            if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
+            {
+                throw new FileNotFoundException("A clipboard file or directory does not exist.", fullPath);
+            }
+
+            return fullPath;
+        }).Distinct().ToArray();
+
+        if (normalizedPaths.Length == 0)
+        {
+            throw new ArgumentException("At least one file or directory is required.", nameof(paths));
+        }
+
+        if (_instance is null)
+        {
+            throw new InvalidOperationException("Clipboard access is unavailable before the window is initialized.");
+        }
+
+        Invoke(() => _instance.SetClipboardFiles(normalizedPaths));
         return this;
     }
 

@@ -28,6 +28,28 @@ Photino contained three packages:
 
 The Native Library has been rewritten to C# and the NET lib has been consolidated into Core with that.
 
+## Clipboard
+
+Blazor components can copy text through the native operating-system clipboard:
+
+```razor
+@inject PhotinoEx.Blazor.IPhotinoExClipboard Clipboard
+
+<button @onclick="Copy">Copy</button>
+
+@code {
+    private Task Copy() => Clipboard.CopyTextAsync("Text to copy").AsTask();
+}
+```
+
+Files and directories can be copied together. Directories are copied recursively by the operating system when pasted, so no recursive flag is required:
+
+```csharp
+await Clipboard.CopyFilesAsync(
+    ["/path/to/report.pdf", "/path/to/folder"]
+);
+```
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first

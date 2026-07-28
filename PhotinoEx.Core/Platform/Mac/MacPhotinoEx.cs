@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using PhotinoEx.Core.Models;
 using Point = System.Drawing.Point;
 using Monitor = PhotinoEx.Core.Models.Monitor;
@@ -7,6 +8,8 @@ namespace PhotinoEx.Core.Platform.Mac;
 
 public class MacPhotinoEx : PhotinoEx
 {
+    private const string ObjCLibrary = "/usr/lib/libobjc.A.dylib";
+
     public MacPhotinoEx(PhotinoExInitParams exInitParams)
     {
         throw new NotImplementedException();
@@ -26,6 +29,67 @@ public class MacPhotinoEx : PhotinoEx
     {
         throw new NotImplementedException();
     }
+
+    public override void SetClipboardText(string text)
+    {
+        var pasteboard = Send(GetClass("NSPasteboard"), GetSelector("generalPasteboard"));
+        Send(pasteboard, GetSelector("clearContents"));
+
+        var nsString = GetClass("NSString");
+        var value = Send(nsString, GetSelector("stringWithUTF8String:"), text);
+        var type = Send(nsString, GetSelector("stringWithUTF8String:"), "public.utf8-plain-text");
+        if (!Send(pasteboard, GetSelector("setString:forType:"), value, type))
+        {
+            throw new InvalidOperationException("macOS rejected the clipboard content.");
+        }
+    }
+
+    public override void SetClipboardFiles(IReadOnlyList<string> paths)
+    {
+        var objects = Send(GetClass("NSMutableArray"), GetSelector("array"));
+        var nsString = GetClass("NSString");
+        var nsUrl = GetClass("NSURL");
+        foreach (var path in paths)
+        {
+            var value = Send(nsString, GetSelector("stringWithUTF8String:"), path);
+            var url = SendObject(nsUrl, GetSelector("fileURLWithPath:"), value);
+            SendObject(objects, GetSelector("addObject:"), url);
+        }
+
+        var pasteboard = Send(GetClass("NSPasteboard"), GetSelector("generalPasteboard"));
+        Send(pasteboard, GetSelector("clearContents"));
+        if (!SendBoolObject(pasteboard, GetSelector("writeObjects:"), objects))
+        {
+            throw new InvalidOperationException("macOS rejected the clipboard file list.");
+        }
+    }
+
+    private static IntPtr GetClass(string name) => objc_getClass(name);
+
+    private static IntPtr GetSelector(string name) => sel_registerName(name);
+
+    [DllImport(ObjCLibrary)]
+    private static extern IntPtr objc_getClass(string name);
+
+    [DllImport(ObjCLibrary)]
+    private static extern IntPtr sel_registerName(string name);
+
+    [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
+    private static extern IntPtr Send(IntPtr receiver, IntPtr selector);
+
+    [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
+    private static extern IntPtr Send(IntPtr receiver, IntPtr selector, string value);
+
+    [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
+    private static extern IntPtr SendObject(IntPtr receiver, IntPtr selector, IntPtr value);
+
+    [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool SendBoolObject(IntPtr receiver, IntPtr selector, IntPtr value);
+
+    [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool Send(IntPtr receiver, IntPtr selector, IntPtr value, IntPtr type);
 
     public override void Close()
     {
