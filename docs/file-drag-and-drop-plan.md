@@ -65,13 +65,13 @@ Completion requires dragging files and folders both ways between the sample and 
 
 ## Phase 3: Linux backend
 
-- [ ] Attach a GTK/GDK drop target accepting file lists and `text/uri-list`.
-- [ ] Decode escaped file URIs and reject non-file schemes.
-- [ ] Attach a native drag source and publish a GDK file-list value where supported.
-- [ ] Retain `text/uri-list` as an interoperability fallback.
-- [ ] Start outbound dragging only from the active GTK pointer gesture.
-- [ ] Map GDK copy, move, link, and cancellation results.
-- [ ] Keep providers alive until the drag completes.
+- [x] Attach a GTK/GDK drop target accepting GDK file lists and their serialized `text/uri-list` form.
+- [x] Let GIO decode escaped file URIs and omit non-local URI schemes from the resulting path list.
+- [x] Attach a native drag source and publish a GDK file-list value.
+- [x] Use GDK file-list serialization to provide the `text/uri-list` interoperability format.
+- [x] Start outbound dragging only from the active GTK pointer gesture.
+- [x] Map GDK copy, move, link, and cancellation results.
+- [x] Keep providers alive until the drag completes.
 - [ ] Verify X11 and Wayland behavior separately.
 
 Completion requires inbound and outbound file/folder dragging with Dolphin and Nautilus on X11 and Wayland.

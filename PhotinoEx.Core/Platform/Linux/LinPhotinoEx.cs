@@ -38,6 +38,7 @@ public class LinPhotinoEx : PhotinoEx
 
     private Application _application { get; set; }
     private Gdk.Clipboard? _clipboard;
+    private LinFileDragDrop? _fileDragDrop;
     private Window? _window { get; set; }
     private PhotinoExInitParams _params { get; set; }
     private SynchronizationContext _syncContext;
@@ -164,6 +165,11 @@ public class LinPhotinoEx : PhotinoEx
 
         _window = ApplicationWindow.New((Application) sender);
         _window!.SetChild(_webView);
+        _fileDragDrop = new LinFileDragDrop(
+            _webView,
+            args => _filesDroppedCallback?.Invoke(args),
+            _syncContext
+        );
         Dialog = new LinuxPhotinoExDialog(_window);
         if (_params.FullScreen)
         {
@@ -439,7 +445,8 @@ public class LinPhotinoEx : PhotinoEx
         IReadOnlyList<string> paths,
         FileDragDropEffects allowedEffects,
         CancellationToken cancellationToken
-    ) => throw new PlatformNotSupportedException("Outbound file dragging is not implemented on Linux.");
+    ) => (_fileDragDrop ?? throw new InvalidOperationException("The GTK window is not initialized."))
+        .BeginAsync(paths, allowedEffects, cancellationToken);
 
     public override void Close()
     {

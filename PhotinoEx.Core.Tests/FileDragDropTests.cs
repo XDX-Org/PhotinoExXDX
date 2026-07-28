@@ -1,11 +1,25 @@
 using PhotinoEx.Core;
 using PhotinoEx.Core.Models;
+using PhotinoEx.Core.Platform.Linux;
+using Gdk;
 using Xunit;
 
 namespace PhotinoEx.Core.Tests;
 
 public sealed class FileDragDropTests
 {
+    [Theory]
+    [InlineData(FileDragDropEffects.None, DragAction.None)]
+    [InlineData(FileDragDropEffects.Copy, DragAction.Copy)]
+    [InlineData(FileDragDropEffects.Move, DragAction.Move)]
+    [InlineData(FileDragDropEffects.Link, DragAction.Link)]
+    [InlineData(FileDragDropEffects.Copy | FileDragDropEffects.Move, DragAction.Copy | DragAction.Move)]
+    public void LinuxDragEffectsMapToGdk(FileDragDropEffects effect, DragAction action)
+    {
+        Assert.Equal(action, LinFileDragDrop.ToGdk(effect));
+        Assert.Equal(effect, LinFileDragDrop.FromGdk(action));
+    }
+
     [Fact]
     public void RegisterFilesDroppedHandlerRaisesInboundEvent()
     {
@@ -67,7 +81,7 @@ public sealed class FileDragDropTests
 
     [Theory]
     [InlineData(FileDragDropEffects.None)]
-    [InlineData((FileDragDropEffects)8)]
+    [InlineData((FileDragDropEffects) 8)]
     public async Task BeginFileDragRejectsInvalidEffects(FileDragDropEffects effects)
     {
         var window = new PhotinoExWindow();
