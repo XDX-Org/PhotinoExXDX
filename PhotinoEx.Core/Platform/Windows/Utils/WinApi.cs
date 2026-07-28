@@ -1,10 +1,20 @@
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using PhotinoEx.Core.Models;
+using PhotinoEx.Core.Platform.Windows.FileDragDrop;
 
 namespace PhotinoEx.Core.Platform.Windows.Utils;
 
 internal static class WinApi
 {
+    [DllImport("ole32.dll")]
+    public static extern int DoDragDrop(
+        [MarshalAs(UnmanagedType.Interface)] IDataObject dataObject,
+        IWinDropSource dropSource,
+        uint allowedEffects,
+        out uint performedEffect
+    );
+
     #region GDI
 
     [DllImport("gdi32.dll", SetLastError = true)]

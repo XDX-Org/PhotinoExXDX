@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 using PhotinoEx.Core.Models;
+using PhotinoEx.Core.Platform.Windows.FileDragDrop;
 using PhotinoEx.Core.Platform.Windows.Dialog;
 using PhotinoEx.Core.Platform.Windows.Tray;
 using PhotinoEx.Core.Platform.Windows.Utils;
@@ -257,7 +258,30 @@ public class WinPhotinoEx : PhotinoEx
         IReadOnlyList<string> paths,
         FileDragDropEffects allowedEffects,
         CancellationToken cancellationToken
-    ) => throw new PlatformNotSupportedException("Outbound file dragging is not implemented on Windows.");
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var result = WinApi.DoDragDrop(
+            new WinFileDataObject(paths),
+            new WinDropSource(cancellationToken),
+            (uint)allowedEffects,
+            out var performedEffect
+        );
+
+        const int dragDropDrop = 0x00040100;
+        const int dragDropCancel = 0x00040101;
+        if (result == dragDropCancel)
+        {
+            return Task.FromResult(FileDragDropEffects.None);
+        }
+
+        if (result != dragDropDrop)
+        {
+            Marshal.ThrowExceptionForHR(result);
+        }
+
+        return Task.FromResult((FileDragDropEffects)performedEffect);
+    }
 
     private void SetClipboardData(
         uint format,

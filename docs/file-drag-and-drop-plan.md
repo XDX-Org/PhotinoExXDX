@@ -56,9 +56,9 @@ Completion requires platform-neutral contracts with unit tests for validation an
 - [ ] Initialize and revoke OLE drag/drop for each window.
 - [ ] Implement inbound `IDropTarget` handling for `CF_HDROP`.
 - [ ] Convert inbound screen coordinates to client coordinates.
-- [ ] Implement outbound `IDataObject` with Unicode `CF_HDROP`.
-- [ ] Implement `IDropSource` and call `DoDragDrop` on the STA UI thread.
-- [ ] Map native `DROPEFFECT_*` results to the shared effects.
+- [x] Implement outbound `IDataObject` with Unicode `CF_HDROP`.
+- [x] Implement `IDropSource` and call `DoDragDrop` on the STA UI thread.
+- [x] Map native `DROPEFFECT_*` results to the shared effects.
 - [ ] Release COM objects and global memory on every result path.
 
 Completion requires dragging files and folders both ways between the sample and Explorer, Notepad, and another drop-capable application.
