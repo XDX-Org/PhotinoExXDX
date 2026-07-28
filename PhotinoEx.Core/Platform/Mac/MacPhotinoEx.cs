@@ -1,9 +1,10 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using PhotinoEx.Core.Models;
-using NativeWindow = Photino.NET.PhotinoWindow;
-using Point = System.Drawing.Point;
+using PhotinoEx.Core.Platform.Mac.Dialog;
 using Monitor = PhotinoEx.Core.Models.Monitor;
+using NativeWindow = PhotinoEx.Core.PhotinoExWindow;
+using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
 
 namespace PhotinoEx.Core.Platform.Mac;
@@ -103,11 +104,13 @@ public sealed class MacPhotinoEx : PhotinoEx
             AddCustomSchemeName(scheme);
         }
 
-        _window.RegisterWebMessageReceivedHandler((_, message) =>
-        {
-            _WebMessageReceivedWithSourceCallback?.Invoke(null, message);
-            _WebMessageReceivedCallback?.Invoke(message);
-        });
+        _window.RegisterWebMessageReceivedHandler(
+            (_, message) =>
+            {
+                _WebMessageReceivedWithSourceCallback?.Invoke(null, message);
+                _WebMessageReceivedCallback?.Invoke(message);
+            }
+        );
         _window.RegisterWindowClosingHandler((_, _) => _closingCallback?.Invoke() ?? false);
         _window.RegisterFocusInHandler((_, _) => _focusInCallback?.Invoke());
         _window.RegisterFocusOutHandler((_, _) => _focusOutCallback?.Invoke());
@@ -166,83 +169,153 @@ public sealed class MacPhotinoEx : PhotinoEx
     ) => throw new PlatformNotSupportedException("Outbound file dragging is not implemented on macOS.");
 
     public override void Close() => _window.Close();
+
     public override bool GetTransparentEnabled() => _window.Transparent;
+
     public override bool GetContextMenuEnabled() => _window.ContextMenuEnabled;
+
     public override bool GetDevToolsEnabled() => _window.DevToolsEnabled;
+
     public override bool GetFullScreen() => _window.FullScreen;
+
     public override bool GetGrantBrowserPermissions() => _window.GrantBrowserPermissions;
+
     public override string GetUserAgent() => _window.UserAgent;
+
     public override bool GetMediaAutoplayEnabled() => _window.MediaAutoplayEnabled;
+
     public override bool GetFileSystemAccessEnabled() => _window.FileSystemAccessEnabled;
+
     public override bool GetWebSecurityEnabled() => _window.WebSecurityEnabled;
+
     public override bool GetJavascriptClipboardAccessEnabled() => _window.JavascriptClipboardAccessEnabled;
+
     public override bool GetMediaStreamEnabled() => _window.MediaStreamEnabled;
+
     public override bool GetSmoothScrollingEnabled() => _window.SmoothScrollingEnabled;
+
     public override bool GetNotificationsEnabled() => _window.NotificationsEnabled;
-    public override string GetIconFileName() => _window.IconFile;
+
+    public override string GetIconFileName() => _window.IconFile ?? "";
+
     public override bool GetMaximized() => _window.Maximized;
+
     public override bool GetMinimized() => _window.Minimized;
+
     public override bool GetResizable() => _window.Resizable;
+
     public override uint GetScreenDpi() => _window.ScreenDpi;
+
     public override Size GetSize() => _window.Size;
+
     public override string GetTitle() => _window.Title;
+
     public override bool GetTopmost() => _window.Topmost;
+
     public override int GetZoom() => _window.Zoom;
+
     public override bool GetIgnoreCertificateErrorsEnabled() => _window.IgnoreCertificateErrorsEnabled;
+
     public override Point GetPosition() => _window.Location;
+
     public override void NavigateToString(string content) => _window.LoadRawString(content);
+
     public override void NavigateToUrl(string url) => _window.Load(new Uri(url));
+
     public override void Restore()
     {
-        if (_window.Minimized) _window.SetMinimized(false);
-        if (_window.Maximized) _window.SetMaximized(false);
+        if (_window.Minimized)
+            _window.SetMinimized(false);
+        if (_window.Maximized)
+            _window.SetMaximized(false);
     }
 
-    public override void SendWebMessage(string message) => _window.SendWebMessage(message);
+    public override void SendWebMessage(string message) => _window.SendWebMessageAsync(message).GetAwaiter().GetResult();
+
     public override void SetTransparentEnabled(bool enabled) => _window.SetTransparent(enabled);
+
     public override void SetContextMenuEnabled(bool enabled) => _window.SetContextMenuEnabled(enabled);
+
     public override void SetDevToolsEnabled(bool enabled) => _window.SetDevToolsEnabled(enabled);
+
     public override void SetPosition(Point newLocation) => _window.SetLocation(newLocation);
+
     public override void SetIconFile(string filename) => _window.SetIconFile(filename);
+
     public override void SetFullScreen(bool fullScreen) => _window.SetFullScreen(fullScreen);
+
     public override void SetMaximized(bool maximized) => _window.SetMaximized(maximized);
+
     public override void SetMinimized(bool minimized) => _window.SetMinimized(minimized);
+
     public override void SetResizable(bool resizable) => _window.SetResizable(resizable);
+
     public override void SetSize(Size size) => _window.SetSize(size);
+
     public override void SetTitle(string title) => _window.SetTitle(title);
+
     public override void SetTopmost(bool topmost) => _window.SetTopMost(topmost);
+
     public override void SetZoom(int zoom) => _window.SetZoom(zoom);
-    public override void ShowNotification(string title, string message) => _window.SendNotification(title, message);
+
+    public override void ShowNotification(string title, string message) =>
+        _window.SendNotificationAsync(title, message).GetAwaiter().GetResult();
+
     public override void WaitForExit() => _window.WaitForClose();
 
     public override void AddCustomSchemeName(string scheme)
     {
-        if (_customSchemeNames.Contains(scheme)) return;
+        if (_customSchemeNames.Contains(scheme))
+            return;
         _customSchemeNames.Add(scheme);
         _window.RegisterCustomSchemeHandler(scheme, HandleCustomSchemeRequest);
     }
 
-    public override List<Monitor> GetAllMonitors() => _window.Monitors.Select(m => new Monitor(
-        new MonitorRect { X = m.MonitorArea.X, Y = m.MonitorArea.Y, Width = m.MonitorArea.Width, Height = m.MonitorArea.Height },
-        new MonitorRect { X = m.WorkArea.X, Y = m.WorkArea.Y, Width = m.WorkArea.Width, Height = m.WorkArea.Height },
-        m.Scale
-    )).ToList();
+    public override List<Monitor> GetAllMonitors() =>
+        _window
+            .Monitors.Select(m => new Monitor(
+                new MonitorRect
+                {
+                    X = m.MonitorArea.X,
+                    Y = m.MonitorArea.Y,
+                    Width = m.MonitorArea.Width,
+                    Height = m.MonitorArea.Height,
+                },
+                new MonitorRect
+                {
+                    X = m.WorkArea.X,
+                    Y = m.WorkArea.Y,
+                    Width = m.WorkArea.Width,
+                    Height = m.WorkArea.Height,
+                },
+                m.Scale
+            ))
+            .ToList();
 
     public override void SetClosingCallback(Func<bool> callback) => _closingCallback = callback;
+
     public override void SetFocusInCallback(Action callback) => _focusInCallback = callback;
+
     public override void SetFocusOutCallback(Action callback) => _focusOutCallback = callback;
+
     public override void SetMovedCallback(Action<int, int> callback) => _movedCallback = callback;
+
     public override void SetResizedCallback(Action<int, int> callback) => _resizedCallback = callback;
+
     public override void SetMaximizedCallback(Action callback) => _maximizedCallback = callback;
+
     public override void SetRestoredCallback(Action callback) => _restoredCallback = callback;
+
     public override void SetMinimizedCallback(Action callback) => _minimizedCallback = callback;
+
     public override void Invoke(Action callback) => _window.Invoke(callback);
 
-    private Stream HandleCustomSchemeRequest(object sender, string scheme, string url, out string contentType) =>
+    private Stream HandleCustomSchemeRequest(object? sender, string? scheme, string url, out string contentType) =>
         _customSchemeCallback?.Invoke(url, out contentType)
         ?? throw new InvalidOperationException($"No handler is registered for the '{scheme}' scheme.");
 
     private static IntPtr GetClass(string name) => objc_getClass(name);
+
     private static IntPtr GetSelector(string name) => sel_registerName(name);
 
     [DllImport(ObjCLibrary)]
@@ -267,49 +340,4 @@ public sealed class MacPhotinoEx : PhotinoEx
     [DllImport(ObjCLibrary, EntryPoint = "objc_msgSend")]
     [return: MarshalAs(UnmanagedType.I1)]
     private static extern bool Send(IntPtr receiver, IntPtr selector, IntPtr value, IntPtr type);
-}
-
-[SupportedOSPlatform("macos")]
-internal sealed class MacPhotinoExDialog(NativeWindow window) : IPhotinoExDialog
-{
-    public async Task<List<string>> ShowOpenFileAsync(
-        string title,
-        string? path,
-        bool multiSelect,
-        List<FileFilter>? filterPatterns
-    ) => (await window.ShowOpenFileAsync(title, path, multiSelect, ConvertFilters(filterPatterns))).ToList();
-
-    public async Task<List<string>> ShowOpenFolderAsync(string title, string? path, bool multiSelect) =>
-        (await window.ShowOpenFolderAsync(title, path, multiSelect)).ToList();
-
-    public Task<string> ShowSaveFileAsync(
-        string title,
-        string? path,
-        List<FileFilter>? filterPatterns,
-        string defaultExtension = "txt",
-        string defaultFileName = "PhotinoExFile"
-    )
-    {
-        var defaultPath = string.IsNullOrWhiteSpace(path)
-            ? defaultFileName
-            : Path.Combine(path, defaultFileName);
-        return window.ShowSaveFileAsync(title, defaultPath, ConvertFilters(filterPatterns));
-    }
-
-    public async Task<DialogResult> ShowMessageAsync(
-        string title,
-        string text,
-        DialogButtons buttons,
-        DialogIcon icon
-    ) => (DialogResult) (int) await Task.Run(() => window.ShowMessage(
-        title,
-        text,
-        (Photino.NET.PhotinoDialogButtons) (int) buttons,
-        (Photino.NET.PhotinoDialogIcon) (int) icon
-    ));
-
-    private static (string Name, string[] Extensions)[]? ConvertFilters(List<FileFilter>? filters) => filters?.Select(filter => (
-        filter.Name,
-        filter.Spec.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    )).ToArray();
 }

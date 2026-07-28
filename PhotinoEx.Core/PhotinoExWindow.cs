@@ -222,6 +222,7 @@ public class PhotinoExWindow
     /// Thrown if trying to set value after native window is initalized.
     /// </exception>
     [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("macos")]
     public bool Centered
     {
         get
@@ -2841,7 +2842,7 @@ public class PhotinoExWindow
             return;
         }
 
-        Console.WriteLine($"Photino.NET: \"{Title}\"{message}");
+        Console.WriteLine($"PhotinoXDX: \"{Title}\"{message}");
     }
 
     /// <summary>
