@@ -37,6 +37,7 @@ public class LinPhotinoEx : PhotinoEx
     public ReturningSignalHandler<WebView, WebView.PermissionRequestSignalArgs, bool>? OnWebviewPermissionRequest { get; set; }
 
     private Application _application { get; set; }
+    private Gdk.Clipboard? _clipboard;
     private Window? _window { get; set; }
     private PhotinoExInitParams _params { get; set; }
     private SynchronizationContext _syncContext;
@@ -417,7 +418,7 @@ public class LinPhotinoEx : PhotinoEx
     {
         var display = _window?.GetDisplay()
             ?? throw new InvalidOperationException("The GTK window is not initialized.");
-        display.GetClipboard().SetText(text);
+        (_clipboard ??= display.GetClipboard()).SetText(text);
     }
 
     public override void SetClipboardFiles(IReadOnlyList<string> paths)
@@ -427,7 +428,7 @@ public class LinPhotinoEx : PhotinoEx
         var uriList = string.Join("\r\n", paths.Select(path => new System.Uri(path).AbsoluteUri)) + "\r\n";
         var bytes = GLib.Bytes.New(Encoding.UTF8.GetBytes(uriList));
         var provider = Gdk.ContentProvider.NewForBytes("text/uri-list", bytes);
-        if (!display.GetClipboard().SetContent(provider))
+        if (!(_clipboard ??= display.GetClipboard()).SetContent(provider))
         {
             throw new InvalidOperationException("GTK rejected the clipboard file list.");
         }

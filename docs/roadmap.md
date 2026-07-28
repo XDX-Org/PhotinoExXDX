@@ -17,15 +17,16 @@
 
 Validate native clipboard behavior in real desktop sessions rather than relying only on contract tests.
 
-- [ ] Create a separate integration-test project and test category.
-- [ ] Keep integration tests excluded from the default headless unit-test run.
+- [x] Create a separate integration-test project and test category.
+- [x] Keep integration tests excluded from the default headless unit-test run.
 - [ ] Verify Windows Unicode text clipboard output.
 - [ ] Verify Windows file and directory output through `CF_HDROP`.
-- [ ] Verify Linux text output under X11 and Wayland.
+- [ ] Verify Linux text output under X11.
+- [x] Verify Linux text output under Wayland.
 - [ ] Verify Linux file and directory output with Nautilus and Dolphin.
-- [ ] Cover mixed files/directories, Unicode, spaces, `#`, and empty files.
-- [ ] Document local prerequisites and commands.
-- [ ] Record macOS tests as skipped until the macOS host is operational.
+- [x] Cover mixed files/directories, Unicode, spaces, `#`, and empty files.
+- [x] Document local prerequisites and commands.
+- [x] Record macOS tests as deferred until the macOS host is operational.
 
 Completion requires repeatable passing clipboard smoke tests on Windows and Linux with failures reporting the platform and native format involved.
 
