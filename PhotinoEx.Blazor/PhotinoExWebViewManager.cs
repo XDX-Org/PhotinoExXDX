@@ -20,6 +20,7 @@ public class PhotinoExWebViewManager : WebViewManager
 {
     private readonly PhotinoExWindow _exWindow;
     private readonly Channel<string> _channel;
+    private readonly Uri _appBaseUri;
 
     // On Windows, we can't use a custom scheme to host the initial HTML,
     // because webview2 won't let you do top-level navigation to such a URL.
@@ -36,22 +37,23 @@ public class PhotinoExWebViewManager : WebViewManager
         : base(provider, dispatcher, config.Value.AppBaseUri, fileProvider, jsComponents, config.Value.HostPage)
     {
         _exWindow = exWindow ?? throw new ArgumentNullException(nameof(exWindow));
+        _appBaseUri = config.Value.AppBaseUri;
 
         // Create a scheduler that uses one threads.
         var sts = new Utils.PhotinoExSynchronousTaskScheduler();
 
-        _exWindow.WebMessageReceived += (sender, message) =>
+        _exWindow.WebMessageReceivedWithSource += (sender, args) =>
         {
+            if (args.Source is null || !IsSameOrigin(args.Source, _appBaseUri))
+            {
+                return;
+            }
+
             // On some platforms, we need to move off the browser UI thread
             Task.Factory.StartNew(message =>
             {
-                // TODO: Fix this. Photino should ideally tell us the URL that the message comes from so we
-                // know whether to trust it. Currently it's hardcoded to trust messages from any source, including
-                // if the webview is somehow navigated to an external URL.
-                var messageOriginUrl = new Uri(AppBaseUri);
-
-                MessageReceived(messageOriginUrl, (string) message!);
-            }, message, CancellationToken.None, TaskCreationOptions.DenyChildAttach, sts);
+                MessageReceived(args.Source, (string) message!);
+            }, args.Message, CancellationToken.None, TaskCreationOptions.DenyChildAttach, sts);
         };
 
         //Create channel and start reader
@@ -103,6 +105,11 @@ public class PhotinoExWebViewManager : WebViewManager
             Thread.Sleep(200);
         }
     }
+
+    internal static bool IsSameOrigin(Uri source, Uri appBaseUri) =>
+        source.Scheme.Equals(appBaseUri.Scheme, StringComparison.OrdinalIgnoreCase)
+        && source.Host.Equals(appBaseUri.Host, StringComparison.OrdinalIgnoreCase)
+        && source.Port == appBaseUri.Port;
 
     private async Task MessagePump()
     {

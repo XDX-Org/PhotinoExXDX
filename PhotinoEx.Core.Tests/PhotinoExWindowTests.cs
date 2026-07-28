@@ -1,11 +1,23 @@
 using System.Drawing;
 using PhotinoEx.Core;
+using PhotinoEx.Blazor;
 using Xunit;
 
 namespace PhotinoEx.Core.Tests;
 
 public sealed class PhotinoExWindowTests
 {
+    [Theory]
+    [InlineData("http://localhost/page", "http://localhost/", true)]
+    [InlineData("http://localhost:80/page", "http://localhost/", true)]
+    [InlineData("https://localhost/page", "http://localhost/", false)]
+    [InlineData("http://example.test/page", "http://localhost/", false)]
+    [InlineData("http://localhost:8080/page", "http://localhost/", false)]
+    public void BlazorMessagesRequireTheApplicationOrigin(string source, string appBaseUri, bool expected)
+    {
+        Assert.Equal(expected, PhotinoExWebViewManager.IsSameOrigin(new Uri(source), new Uri(appBaseUri)));
+    }
+
     [Fact]
     public void DefaultsAreConfiguredForAUsableWindow()
     {

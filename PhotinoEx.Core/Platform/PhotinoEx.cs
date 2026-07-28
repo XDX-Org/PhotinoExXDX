@@ -9,6 +9,7 @@ namespace PhotinoEx.Core.Platform;
 public abstract class PhotinoEx
 {
     protected Action<string>? _WebMessageReceivedCallback { get; set; }
+    protected Action<Uri?, string>? _WebMessageReceivedWithSourceCallback { get; set; }
     protected Action<FilesDroppedEventArgs>? _filesDroppedCallback { get; set; }
     protected Action<int, int>? _resizedCallback { get; set; }
     protected Action? _maximizedCallback { get; set; }

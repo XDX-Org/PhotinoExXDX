@@ -1595,6 +1595,7 @@ public class PhotinoExWindow
         _startupParameters.FocusInHandler = OnFocusIn;
         _startupParameters.FocusOutHandler = OnFocusOut;
         _startupParameters.WebMessageRecievedHandler = OnWebMessageReceived;
+        _startupParameters.WebMessageReceivedWithSourceHandler = OnWebMessageReceived;
         _startupParameters.FilesDroppedHandler = OnFilesDropped;
         _startupParameters.CustomSchemeHandler = OnCustomScheme;
     }
@@ -3054,6 +3055,7 @@ public class PhotinoExWindow
     }
 
     public event EventHandler<string>? WebMessageReceived;
+    public event EventHandler<WebMessageReceivedEventArgs>? WebMessageReceivedWithSource;
 
     /// <summary>
     /// Registers user-defined handler methods to receive callbacks from the native window when it sends a message.
@@ -3077,6 +3079,11 @@ public class PhotinoExWindow
     internal void OnWebMessageReceived(string message)
     {
         WebMessageReceived?.Invoke(this, message);
+    }
+
+    internal void OnWebMessageReceived(Uri? source, string message)
+    {
+        WebMessageReceivedWithSource?.Invoke(this, new WebMessageReceivedEventArgs(source, message));
     }
 
     public event EventHandler<FilesDroppedEventArgs>? FilesDropped;

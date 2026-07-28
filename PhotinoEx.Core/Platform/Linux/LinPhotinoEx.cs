@@ -80,6 +80,7 @@ public class LinPhotinoEx : PhotinoEx
         MaxHeight = _params.MaxHeight;
 
         _WebMessageReceivedCallback = _params.WebMessageRecievedHandler;
+        _WebMessageReceivedWithSourceCallback = _params.WebMessageReceivedWithSourceHandler;
         _filesDroppedCallback = _params.FilesDroppedHandler;
         _resizedCallback = _params.ResizedHandler;
         _movedCallback = _params.MovedHandler;
@@ -140,7 +141,7 @@ public class LinPhotinoEx : PhotinoEx
 
         var script = UserScript.New(
             scriptSource,
-            UserContentInjectedFrames.AllFrames,
+            UserContentInjectedFrames.TopFrame,
             UserScriptInjectionTime.Start,
             null,
             null
@@ -411,6 +412,8 @@ public class LinPhotinoEx : PhotinoEx
         {
             var message = jsValue.ToString();
 
+            System.Uri.TryCreate(_webView?.Uri, UriKind.Absolute, out var source);
+            _WebMessageReceivedWithSourceCallback?.Invoke(source, message);
             _WebMessageReceivedCallback?.Invoke(message);
         }
     }

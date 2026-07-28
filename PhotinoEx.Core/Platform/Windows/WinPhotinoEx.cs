@@ -75,6 +75,7 @@ public class WinPhotinoEx : PhotinoEx
         MaxHeight = _params.MaxHeight;
 
         _WebMessageReceivedCallback = _params.WebMessageRecievedHandler;
+        _WebMessageReceivedWithSourceCallback = _params.WebMessageReceivedWithSourceHandler;
         _filesDroppedCallback = _params.FilesDroppedHandler;
         _resizedCallback = _params.ResizedHandler;
         _movedCallback = _params.MovedHandler;
@@ -727,6 +728,7 @@ public class WinPhotinoEx : PhotinoEx
         {
             // Console.WriteLine(args.TryGetWebMessageAsString());
             var message = args.TryGetWebMessageAsString();
+            _WebMessageReceivedWithSourceCallback?.Invoke(new Uri(args.Source), message);
             _WebMessageReceivedCallback?.Invoke(message);
         };
 
