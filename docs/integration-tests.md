@@ -27,4 +27,6 @@ Requirements:
 
 The smoke test covers Unicode text plus a mixed file/directory selection containing spaces and `#`. Windows output is read through `GetClipboardData` and `DragQueryFile`; Linux output is read through the GTK/GDK clipboard API.
 
+On Wayland, the automated test verifies the local GDK offer. Compositors may require a recent user-input serial before accepting clipboard ownership, so system paste behavior must be verified through the sample app's **Select and copy files** button.
+
 These tests manipulate the user's real clipboard and briefly open a native window. Do not run them in parallel with applications or tests that also own the clipboard.

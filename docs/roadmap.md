@@ -22,7 +22,7 @@ Validate native clipboard behavior in real desktop sessions rather than relying 
 - [ ] Verify Windows Unicode text clipboard output.
 - [ ] Verify Windows file and directory output through `CF_HDROP`.
 - [ ] Verify Linux text output under X11.
-- [x] Verify Linux text output under Wayland.
+- [ ] Verify Linux text output under Wayland through a user-triggered sample action.
 - [ ] Verify Linux file and directory output with Nautilus and Dolphin.
 - [x] Cover mixed files/directories, Unicode, spaces, `#`, and empty files.
 - [x] Document local prerequisites and commands.
