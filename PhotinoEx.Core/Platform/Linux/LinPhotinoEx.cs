@@ -755,7 +755,7 @@ public class LinPhotinoEx : PhotinoEx
     public override void SetZoom(int zoom)
     {
         _zoom = zoom;
-        _webView!.SetZoomLevel(_zoom);
+        _webView!.SetZoomLevel(_zoom / 100d);
     }
 
     public override void ShowNotification(string title, string message)
